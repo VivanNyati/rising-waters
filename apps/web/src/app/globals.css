@@ -6025,3 +6025,14 @@ svg image {
     animation: none;
   }
 }
+
+/* All map layers share one scrolling surface. */
+.map-surface > .world-map {
+  position: relative;
+  z-index: 3;
+}
+.map-surface > .world-canvas,
+.map-surface > .world-hazard-canvas {
+  position: absolute;
+  pointer-events: none;
+}

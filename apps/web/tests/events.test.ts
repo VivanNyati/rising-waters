@@ -32,10 +32,10 @@ test("the same seed replays the same events (SpacetimeDB stays deterministic)", 
   assert.deepEqual(eventLog(1234), eventLog(1234));
 });
 
-test("different seeds start different worlds", () => {
+test("different seeds produce different events after the gentle opening", () => {
   const firsts = new Set(
     [11, 222, 3333, 44444, 555555, 6666666].map((seed) =>
-      CIV_IDS.map((c) => eventLog(seed)[c][0]).join(","),
+      CIV_IDS.map((c) => eventLog(seed)[c][3]).join(","),
     ),
   );
   assert(firsts.size >= 4, `only ${firsts.size} distinct openings`);

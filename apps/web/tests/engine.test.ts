@@ -135,10 +135,12 @@ test("warming increases only climate-driven event severity and frequency", () =>
   let checkedComparable = 0;
   for (let seed = 1; seed <= 500; seed++) {
     const cool = createGame(P, "solo", seed);
+    cool.round = 4;
     cool.climate = 0;
     cool.rng = seed;
     rollEvents(cool);
     const hot = createGame(P, "solo", seed);
+    hot.round = 4;
     hot.climate = 2;
     hot.rng = seed;
     rollEvents(hot);
@@ -276,7 +278,10 @@ test("full AI games finish within ten decades with no negative stock", () => {
 });
 
 test("hot-seat waits for every person before moving on", () => {
-  let s = advance(createGame(P, "hotseat", 5));
+  const normal = createGame(P, "hotseat", 5);
+  normal.round = 4;
+  rollEvents(normal);
+  let s = advance(normal);
   const q = questionFor(s, P)!;
   s = answerQuiz(s, P, q.correct, 1000);
   assert.equal(s.phase, "quiz", "three more people still have to answer");
@@ -299,7 +304,10 @@ test("every playable event has a quiz, neighbor line and lasting mitigation", ()
 });
 
 test("the response phase waits for every hot-seat player", () => {
-  let s = advance(createGame(P, "hotseat", 15));
+  const normal = createGame(P, "hotseat", 15);
+  normal.round = 4;
+  rollEvents(normal);
+  let s = advance(normal);
   for (const civ of CIV_IDS) {
     const q = questionFor(s, civ)!;
     s = answerQuiz(s, civ, q.correct, 1000);

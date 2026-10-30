@@ -64,6 +64,16 @@ export function introLines(civ: CivId): string[] {
 export function eventLines(state: GameState, civ: CivId): string[] {
   const ev = state.events[civ];
   const e = EVENTS[ev.type];
+  if (state.round === 1)
+    return [
+      `Look at ${CIVS[state.player].name}: a small ${e.name.toLowerCase()} is the island's only disaster. The other towns are safe for now.`,
+      `${e.tell} We can choose "${e.green.label}" for lasting protection, use a temporary fix, or brace for a small loss. ${e.lesson}`,
+      "Answer one short question, then choose a response. Use these first three gentle decades to build food production and defenses before bigger disasters arrive.",
+    ];
+  if (ev.quiet)
+    return [
+      "Our town is calm. Use the breathing room to build food production, research clean energy, and prepare defenses.",
+    ];
   const lines = [`${e.name}! ${e.tell}`];
   if (ev.cause && e.caused)
     lines.push(e.caused.replace("{cause}", CIVS[ev.cause].name));

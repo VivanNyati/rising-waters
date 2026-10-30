@@ -41,6 +41,8 @@ export type Phase =
   "event" | "quiz" | "response" | "choice" | "build" | "ended";
 
 export interface CycleEvent {
+  /** A quiet setup decade with no local incident. */
+  quiet?: boolean;
   type: EventId;
   /** A neighbor whose buildings made this event more likely (shown in the narration). */
   cause?: CivId;

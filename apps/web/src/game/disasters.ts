@@ -126,6 +126,26 @@ function event(
 }
 /** One small pressure per town per round; major incidents have a separate chance and cooldown. */
 export function drawRegionalEvents(s: GameState, dice: Dice) {
+  if (s.round <= RISK.opening.majorFreeRounds) {
+    s.scheduled = [];
+    s.minorEvents = {};
+    const count = RISK.opening.activeTowns[s.round - 1];
+    const start = CIV_IDS.indexOf(s.player);
+    const incident = RISK.opening.incidents[s.round - 1] as EventId;
+    for (let i = 0; i < CIV_IDS.length; i++) {
+      const c = CIV_IDS[(start + i) % CIV_IDS.length];
+      const ev = event(incident, RISK.opening.severity, c, s.round);
+      ev.quiet = i >= count;
+      if (ev.quiet) ev.loss = {};
+      else
+        for (const r of RESOURCES)
+          if (ev.loss[r])
+            ev.loss[r] = Math.min(RISK.opening.lossCap, ev.loss[r]!);
+      s.events[c] = ev;
+      s.civs[c].recent = [...(s.civs[c].recent ?? []), incident].slice(-3);
+    }
+    return;
+  }
   s.scheduled ??= [];
   s.minorEvents = {};
   s.scheduled = s.scheduled.filter(
@@ -469,6 +489,7 @@ export function damageBuildings(
   dice: Dice,
   allowance: number,
 ): string[] {
+  if (s.round <= RISK.opening.preventDestructionRounds) return [];
   const town = s.civs[c];
   const p = profile(h.type);
   const burning =

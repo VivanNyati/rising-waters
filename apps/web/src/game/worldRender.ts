@@ -1109,7 +1109,7 @@ export function areaStatus(state?: GameState): AreaStatus[] {
       if (minor) effects.add(minor.type);
       const own = state.events[civ];
       const avoided = state.phase === "build" && state.civs[civ].choice === 0;
-      if (own && !avoided) {
+      if (own && !own.quiet && !avoided) {
         effects.add(own.type);
         damaged = 1;
       }
@@ -1120,6 +1120,7 @@ export function areaStatus(state?: GameState): AreaStatus[] {
           if (
             other === civ ||
             state.civs[other].choice !== 0 ||
+            state.events[other]?.quiet ||
             !e?.cheap.spillTo
           )
             continue;

@@ -1,5 +1,11 @@
 "use client";
-import { type RefObject, useEffect, useRef, useState } from "react";
+import {
+  type RefObject,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from "react";
 import type { HazardFrames } from "@/game/hazardVisuals";
 import { CIVS, EVENTS } from "@/game/content";
 import { spillTarget } from "@/game/engine";
@@ -51,7 +57,7 @@ function LiveTerrain({
     ).matches;
     const trips = new Map<number, { civ: CivId; start: number }>();
     const hazardStarts = new Map<string, number>();
-    const viewportEl = svg.current?.parentElement;
+    const viewportEl = svg.current?.parentElement?.parentElement;
     let disposed = false;
     const measure = () => {
       const mapEl = svg.current;
@@ -374,6 +380,7 @@ export default function WorldMap({
   initialZoom = 1.4 / 2,
   previewFrame,
   showEventMarkers = true,
+  openingFocus = false,
 }: {
   state: GameState;
   selected?: CivId;
@@ -382,6 +389,8 @@ export default function WorldMap({
   /** Temporary visual test harness only; normal gameplay always uses live time. */
   previewFrame?: number;
   showEventMarkers?: boolean;
+  /** Focus the only opening incident while the advisor points it out. */
+  openingFocus?: boolean;
 }) {
   const [zoomStep, setZoomStep] = useState(0);
   const [fit, setFit] = useState({ device: 3, dpr: 1, width: 0, height: 0 });
@@ -395,6 +404,9 @@ export default function WorldMap({
     moved: boolean;
   } | null>(null);
   const suppressClick = useRef(false);
+  const spotlight =
+    openingFocus && state.round === 1 && state.phase === "event";
+  const focusStep = spotlight ? 2 : zoomStep;
   useEffect(() => {
     const el = viewport.current;
     if (!el) return;
@@ -413,7 +425,7 @@ export default function WorldMap({
     return () => observer.disconnect();
   }, []);
   const baseDevice = Math.max(1, Math.round(fit.device * initialZoom));
-  const steppedDevice = Math.max(1, baseDevice + zoomStep);
+  const steppedDevice = Math.max(1, baseDevice + focusStep);
   const zoomRatio = steppedDevice / baseDevice;
   // Include the viewport width in the pixel-perfect fit. A height-only fit can leave wide screens
   // with zero horizontal camera track even though the pointer handler updates scrollLeft.
@@ -423,32 +435,40 @@ export default function WorldMap({
   const scale = Math.max(steppedDevice, horizontalDevice) / fit.dpr;
   const mapWidth = 320 * scale;
   const horizontalCenter = Math.max(0, (fit.width - mapWidth) / 2);
-  useEffect(() => {
+  useLayoutEffect(() => {
     const el = viewport.current;
     if (!el) return;
+    if (spotlight) {
+      const [x, y] = keep(state.player);
+      el.scrollLeft = Math.max(
+        0,
+        horizontalCenter + (x * scale) / 4 - el.clientWidth / 2,
+      );
+      el.scrollTop = Math.max(0, (y * scale) / 4 - el.clientHeight * 0.3);
+      return;
+    }
     el.scrollLeft = Math.max(0, (el.scrollWidth - el.clientWidth) / 2);
     el.scrollTop = Math.max(0, (el.scrollHeight - el.clientHeight) / 2);
-  }, [scale]);
+  }, [scale, spotlight, state.player, horizontalCenter]);
 
   // Cheap choices push damage onto a neighbor: draw that as an arrow between towns.
   const spills =
     state.phase === "build"
       ? CIV_IDS.flatMap((from) => {
           const e = EVENTS[state.events[from].type];
-          if (state.civs[from].choice !== 0 || !e.cheap.spillTo) return [];
+          if (
+            state.events[from].quiet ||
+            state.civs[from].choice !== 0 ||
+            !e.cheap.spillTo
+          )
+            return [];
           return [{ from, to: spillTarget(from, e.cheap.spillTo), e }];
         })
       : [];
   return (
     <div className="map-shell pixel-map">
-      <LiveTerrain
-        key={state.seed}
-        state={state}
-        svg={svg}
-        scale={scale}
-        previewFrame={previewFrame}
-      />
       <div
+        data-camera={spotlight ? "opening-incident" : "free"}
         className="map-viewport"
         ref={viewport}
         tabIndex={0}
@@ -513,129 +533,165 @@ export default function WorldMap({
           }
         }}
       >
-        <svg
-          ref={svg}
-          className="world-map"
-          viewBox="0 0 1280 800"
+        <div
+          className="map-surface"
           style={{
-            width: mapWidth,
-            height: 200 * scale,
-            marginLeft: horizontalCenter,
-            marginTop: Math.max(0, (fit.height - 200 * scale) / 2),
-            marginBottom: "var(--camera-reserve)",
-            // Preserve a small horizontal camera track even when the 2x-wide default framing
-            // fits the entire island, so click-dragging left and right still moves the view.
-            marginRight: horizontalCenter + fit.width * 0.12,
+            position: "relative",
+            width: mapWidth + horizontalCenter * 2 + fit.width * 0.12,
+            minHeight: "100%",
           }}
-          role="group"
-          aria-label="The valley: select a town to inspect it"
         >
-          {TOWNS.map((town) => {
-            const civ = OWNERS[town.civ];
-            const [x, y] = keep(civ);
-            const ev =
-              showEventMarkers && state.phase !== "ended"
-                ? state.events[civ]
-                : undefined;
-            const e = ev ? EVENTS[ev.type] : undefined;
-            const open = () => onSelect(civ);
-            return (
-              <g
-                key={town.id}
-                tabIndex={0}
-                role="button"
-                aria-label={`${town.name}, ${CIVS[civ].name}${e ? `. Facing: ${e.name}` : ""}`}
-                onClick={open}
-                onKeyDown={(k) => {
-                  if (k.key === "Enter" || k.key === " ") {
-                    k.preventDefault();
-                    open();
-                  }
-                }}
-                className="castle-hotspot"
-              >
-                <rect
-                  x={x - 50}
-                  y={y - 44}
-                  width="100"
-                  height="84"
-                  fill="transparent"
-                  stroke={selected === civ ? "#ffe379" : "transparent"}
-                  strokeWidth="4"
-                />
-                {e && (
-                  <g className="damage-bubble">
-                    <rect
-                      x={x + 26}
-                      y={y - 52}
-                      width="34"
-                      height="34"
-                      fill="#8c2929"
-                      stroke="#fff0bf"
-                      strokeWidth="3"
-                    />
-                    <text
-                      x={x + 43}
-                      y={y - 27}
-                      textAnchor="middle"
-                      fill="#fff0bf"
-                      fontSize="22"
-                    >
-                      {e.icon}
-                    </text>
-                    <title>{e.name}</title>
-                  </g>
-                )}
-                <rect
-                  x={x - 64}
-                  y={y + 10}
-                  width="128"
-                  height="26"
-                  fill="#d9ae52"
-                  stroke="#382516"
-                  strokeWidth="2"
-                />
-                <text
-                  x={x}
-                  y={y + 29}
-                  textAnchor="middle"
-                  fontSize="20"
-                  fill="#23170e"
+          <LiveTerrain
+            key={state.seed}
+            state={state}
+            svg={svg}
+            scale={scale}
+            previewFrame={previewFrame}
+          />
+          <svg
+            ref={svg}
+            className="world-map"
+            viewBox="0 0 1280 800"
+            style={{
+              width: mapWidth,
+              height: 200 * scale,
+              marginLeft: horizontalCenter,
+              marginTop: Math.max(0, (fit.height - 200 * scale) / 2),
+              marginBottom: "var(--camera-reserve)",
+              // Preserve a small horizontal camera track even when the 2x-wide default framing
+              // fits the entire island, so click-dragging left and right still moves the view.
+              marginRight: horizontalCenter + fit.width * 0.12,
+            }}
+            role="group"
+            aria-label="The valley: select a town to inspect it"
+          >
+            {TOWNS.map((town) => {
+              const civ = OWNERS[town.civ];
+              const [x, y] = keep(civ);
+              const ev =
+                showEventMarkers &&
+                state.phase !== "ended" &&
+                !state.events[civ].quiet
+                  ? state.events[civ]
+                  : undefined;
+              const e = ev ? EVENTS[ev.type] : undefined;
+              const open = () => onSelect(civ);
+              return (
+                <g
+                  key={town.id}
+                  tabIndex={0}
+                  role="button"
+                  aria-label={`${town.name}, ${CIVS[civ].name}${e ? `. Facing: ${e.name}` : ""}`}
+                  onClick={open}
+                  onKeyDown={(k) => {
+                    if (k.key === "Enter" || k.key === " ") {
+                      k.preventDefault();
+                      open();
+                    }
+                  }}
+                  className="castle-hotspot"
                 >
-                  {town.name}
-                </text>
-              </g>
-            );
-          })}
-          {spills.map(({ from, to, e }) => {
-            const [x, y] = keep(from),
-              [tx, ty] = keep(to);
-            // Arrows sharing a destination take separate lanes so they don't overlap.
-            const lane = spills.filter(
-              (o) => o.to === to && o.from < from,
-            ).length;
-            const px = pixelArrow(x, y, tx, ty, lane);
-            const [light, dark] = ARROW_COLORS[to];
-            return (
-              <g key={from} className="spill-pixel" shapeRendering="crispEdges">
-                <title>
-                  {`${CIVS[from].name} chose "${e.cheap.label}": ${CIVS[to].name} takes the damage.`}
-                </title>
-                <path d={px.outline} fill="#000" />
-                <path d={px.dark} fill={dark} />
-                <path d={px.light} fill={light} />
-                {px.march.map((d, phase) => (
-                  <path
-                    key={phase}
-                    d={d}
-                    className={`spill-march phase-${phase}`}
-                    fill="#fff6d0"
+                  <rect
+                    x={x - 50}
+                    y={y - 44}
+                    width="100"
+                    height="84"
+                    fill="transparent"
+                    stroke={selected === civ ? "#ffe379" : "transparent"}
+                    strokeWidth="4"
                   />
-                ))}
-              </g>
-            );
-          })}
-        </svg>
+                  {e && (
+                    <g className="damage-bubble">
+                      <rect
+                        x={x + 26}
+                        y={y - 52}
+                        width="34"
+                        height="34"
+                        fill="#8c2929"
+                        stroke="#fff0bf"
+                        strokeWidth="3"
+                      />
+                      <text
+                        x={x + 43}
+                        y={y - 27}
+                        textAnchor="middle"
+                        fill="#fff0bf"
+                        fontSize="22"
+                      >
+                        {e.icon}
+                      </text>
+                      <title>{e.name}</title>
+                      {spotlight && civ === state.player && (
+                        <text
+                          x={x}
+                          y={y - 70}
+                          textAnchor="middle"
+                          fill="#fff0bf"
+                          stroke="#23170e"
+                          strokeWidth="6"
+                          paintOrder="stroke"
+                          fontSize="24"
+                        >
+                          {e.name} · small incident
+                        </text>
+                      )}
+                    </g>
+                  )}
+                  <rect
+                    x={x - 64}
+                    y={y + 10}
+                    width="128"
+                    height="26"
+                    fill="#d9ae52"
+                    stroke="#382516"
+                    strokeWidth="2"
+                  />
+                  <text
+                    x={x}
+                    y={y + 29}
+                    textAnchor="middle"
+                    fontSize="20"
+                    fill="#23170e"
+                  >
+                    {town.name}
+                  </text>
+                </g>
+              );
+            })}
+            {spills.map(({ from, to, e }) => {
+              const [x, y] = keep(from),
+                [tx, ty] = keep(to);
+              // Arrows sharing a destination take separate lanes so they don't overlap.
+              const lane = spills.filter(
+                (o) => o.to === to && o.from < from,
+              ).length;
+              const px = pixelArrow(x, y, tx, ty, lane);
+              const [light, dark] = ARROW_COLORS[to];
+              return (
+                <g
+                  key={from}
+                  className="spill-pixel"
+                  shapeRendering="crispEdges"
+                >
+                  <title>
+                    {`${CIVS[from].name} chose "${e.cheap.label}": ${CIVS[to].name} takes the damage.`}
+                  </title>
+                  <path d={px.outline} fill="#000" />
+                  <path d={px.dark} fill={dark} />
+                  <path d={px.light} fill={light} />
+                  {px.march.map((d, phase) => (
+                    <path
+                      key={phase}
+                      d={d}
+                      className={`spill-march phase-${phase}`}
+                      fill="#fff6d0"
+                    />
+                  ))}
+                </g>
+              );
+            })}
+          </svg>
+        </div>
       </div>
       <div className="map-controls">
         <button

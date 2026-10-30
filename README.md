@@ -8,6 +8,8 @@ A playable environmental strategy tycoon built entirely in TypeScript: Next.js/R
 
 Four towns share one river valley. Every decade each town is hit by an event (a flood, drought, smog, a spill), and its advisor tells the player what is coming. The player answers a timed question about it, then chooses between a cheap fix that pushes the damage onto a neighbor or warms the planet, and a sustainable fix that costs more but protects the town for good. Then they build with sheep, wheat, wood, brick and ore, and watch the town grow on the map. After ten decades the biggest town wins, unless warming reaches +3°C first, in which case everyone loses.
 
+Every new game starts with one small flood and a brief advisor-led camera focus before the first question. The first three decades gradually introduce mild incidents without building destruction, leaving time to establish food production and defenses. Character dialogue is text-only; no voice service or audio API keys are required.
+
 Modes: offline solo with AI neighbors, four-player hot-seat, and live SpacetimeDB rooms with AI filling unclaimed towns. The map is drawn live from `src/data/worldmap.json`; see `AGENTS.md` §0 for the full design.
 
 The simulation now includes routine pressures, rare major disasters, persistent regional recovery, bounded building destruction, food and maintenance upkeep, limited project actions and independent clean-energy research. See [the simulation rules](docs/SIMULATION.md) for balancing data, causal propagation and the UI handoff API.

@@ -11,7 +11,7 @@ import {
   advance,
   answerQuiz,
   applyAction,
-  createGame,
+  createGame as createOpeningGame,
   income,
   questionFor,
   resolveEvents,
@@ -102,6 +102,12 @@ import {
   worldLayers,
 } from "../src/game/worldRender";
 
+function createGame(...args: Parameters<typeof createOpeningGame>) {
+  const s = createOpeningGame(...args);
+  s.round = 4;
+  rollEvents(s);
+  return s;
+}
 function buildState() {
   const s = createGame("heartland", "hotseat", 17);
   s.phase = "build";
@@ -193,7 +199,7 @@ test("major incidents are rare and regional cooldowns prevent repeated fresh cat
     total = 0;
   for (let seed = 1; seed <= 500; seed++) {
     const s = createGame("heartland", "solo", seed);
-    for (let round = 1; round <= 10; round++) {
+    for (let round = 4; round <= 10; round++) {
       s.round = round;
       s.scheduled = [];
       const previous = CIV_IDS.map((c) => s.civs[c].lastMajor);
@@ -257,14 +263,14 @@ test("delayed coastal waves retain location and earthquake causality", () => {
       type: "mega_tsunami",
       target: "archipelago",
       origin: "archipelago",
-      arrives: 2,
+      arrives: s.round + 1,
       severity: 3,
       reason: "Offshore earthquake displaced the seabed.",
     },
   ];
   rollEvents(s);
   assert.notEqual(s.events.archipelago.type, "mega_tsunami");
-  s.round = 2;
+  s.round += 1;
   rollEvents(s);
   assert.equal(s.events.archipelago.type, "mega_tsunami");
   assert.match(s.events.archipelago.reason!, /earthquake/);
@@ -319,7 +325,7 @@ test("dam-break pulses travel downstream after a delay", () => {
       "enclave",
       "petrostate",
     ]);
-    assert(floods.every((h) => h.arrives === 2));
+    assert(floods.every((h) => h.arrives === s.round + 1));
   }
   assert(found);
 });

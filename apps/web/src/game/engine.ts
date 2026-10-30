@@ -226,7 +226,14 @@ export function advance(state: GameState): GameState {
   if (state.phase !== "event") return state;
   const s = clone(state);
   if (collapseFromTsunami(s)) return s;
-  for (const c of CIV_IDS) pickQuestion(s, c);
+  for (const c of CIV_IDS) {
+    pickQuestion(s, c);
+    if (s.events[c].quiet) {
+      s.civs[c].quiz!.option = -1;
+      s.civs[c].responded = true;
+      s.civs[c].choice = 2;
+    }
+  }
   s.phase = "quiz";
   return progress(s);
 }
@@ -253,6 +260,7 @@ export function answerQuiz(
 
 // ---------- actions ----------
 export function choiceCost(s: GameState, civ: CivId, option: 0 | 1 | 2) {
+  if (s.events[civ].quiet) return {};
   const e = EVENTS[s.events[civ].type];
   return option === 0 ? e.cheap.cost : option === 1 ? e.green.cost : {};
 }
@@ -417,6 +425,12 @@ export function resolveEvents(s: GameState) {
     const civ = s.civs[c],
       ev = s.events[c],
       e = EVENTS[ev.type];
+    if (ev.quiet) {
+      civ.report = [
+        "A calm decade: establish food production and lasting defenses.",
+      ];
+      continue;
+    }
     const choice = civ.choice ?? 2;
     const h = ensureHazard(s, c, ev);
     let allowance = destructionProfile(ev.type).perRound;

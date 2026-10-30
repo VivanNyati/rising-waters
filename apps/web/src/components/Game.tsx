@@ -46,19 +46,12 @@ import {
   type Resource,
   type Stock,
 } from "@/game/types";
-import {
-  LEADERS,
-  leaderArt,
-  decadeLine,
-  eventLines,
-  introLines,
-} from "@/game/leaders";
+import { LEADERS, leaderArt, decadeLine, eventLines } from "@/game/leaders";
 import { townOf, KINGDOM } from "@/game/towns";
 import { useWorld } from "@/game/useWorld";
 import { usePlayerSessions } from "@/game/usePlayerSessions";
 import LeaderSelect from "./LeaderSelect";
 import Narrator from "./Narrator";
-import RadioControl from "./RadioControl";
 import RoomLobby from "./RoomLobby";
 import WorldMap from "./WorldMap";
 import WorldStage from "./WorldStage";
@@ -107,6 +100,7 @@ export default function Game() {
     [importError, setImportError] = useState("");
   const world = useWorld(setState);
   const [roomCode, setRoomCode] = useState("");
+  const [openingLine, setOpeningLine] = useState(0);
   const [hostStarted, setHostStarted] = useState(false);
   const online = !!world.roomId;
   const sessionCount = usePlayerSessions(!!state);
@@ -180,6 +174,7 @@ export default function Game() {
     world.disconnect();
     setState(createGame(civ, mode, Number(seed) || newSeed()));
     setHeard(undefined);
+    setOpeningLine(0);
     setInspect(undefined);
   }
   function backToSetup() {
@@ -387,7 +382,6 @@ export default function Game() {
           </span>
         </a>
         <div className="sidebar-bottom">
-          <RadioControl state={state} civ={civId} />
           <button onClick={() => setHelp(true)}>
             <BookOpen size={15} /> How to play
           </button>
@@ -438,6 +432,7 @@ export default function Game() {
             state.collapseCause ? (
               <>
                 <WorldMap
+                  key={state.seed}
                   state={state}
                   onSelect={() => {}}
                   showEventMarkers={false}
@@ -452,7 +447,13 @@ export default function Game() {
           ) : (
             <>
               <WorldMap
+                key={state.seed}
                 state={state}
+                openingFocus={
+                  state.round === 1 &&
+                  state.phase === "event" &&
+                  openingLine === 0
+                }
                 selected={inspect}
                 onSelect={(c) => setInspect(inspect === c ? undefined : c)}
               />
@@ -471,10 +472,13 @@ export default function Game() {
                   <Narrator
                     civ={civId}
                     className="narrator-docked"
-                    eyebrow={`DECADE ${state.round} · ${EVENTS[state.events[civId].type].name.toUpperCase()}`}
+                    onLineChange={
+                      state.round === 1 ? setOpeningLine : undefined
+                    }
+                    eyebrow={`DECADE ${state.round} · ${state.events[civId].quiet ? "CALM WATERS" : EVENTS[state.events[civId].type].name.toUpperCase()}`}
                     lines={[
                       ...(state.round === 1
-                        ? introLines(civId)
+                        ? []
                         : [decadeLine(state.round, state.climate)]),
                       ...eventLines(state, civId),
                     ]}

@@ -312,5 +312,13 @@
     }
   },
   "fireStormExtraCap": 2,
-  "megaTsunamiClimateThreshold": 2
+  "megaTsunamiClimateThreshold": 2,
+  "opening": {
+    "severity": 0.5,
+    "activeTowns": [1, 2, 3],
+    "majorFreeRounds": 3,
+    "lossCap": 1,
+    "preventDestructionRounds": 3,
+    "incidents": ["flood", "drought", "landslide"]
+  }
 }
