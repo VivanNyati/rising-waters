@@ -1111,7 +1111,7 @@ export function areaStatus(state?: GameState): AreaStatus[] {
       const avoided = state.phase === "build" && state.civs[civ].choice === 0;
       if (own && !own.quiet && !avoided) {
         effects.add(own.type);
-        damaged = 1;
+        damaged = EVENTS[own.type].openingOnly ? 0 : 1;
       }
       // Hazards a neighbor's cheap choice pushed onto this region.
       if (state.phase === "build")

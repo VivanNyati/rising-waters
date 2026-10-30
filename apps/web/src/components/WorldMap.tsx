@@ -632,7 +632,10 @@ export default function WorldMap({
                           paintOrder="stroke"
                           fontSize="24"
                         >
-                          {e.name} · small incident
+                          {e.name} ·{" "}
+                          {e.openingOnly
+                            ? "island-wide shower"
+                            : "small incident"}
                         </text>
                       )}
                     </g>

@@ -23,6 +23,14 @@
   "hurricaneFloodChance": 0.65,
   "spillSpreadChance": 0.6,
   "profiles": {
+    "light_rain": {
+      "major": false,
+      "duration": 1,
+      "vulnerable": [],
+      "production": [],
+      "growth": 0,
+      "cleanup": {}
+    },
     "flood": {
       "major": false,
       "duration": 2,
@@ -280,6 +288,12 @@
   "fossilOilWeight": 2,
   "fireStormMultiplier": 1.35,
   "destruction": {
+    "light_rain": {
+      "cap": 0,
+      "perRound": 0,
+      "scarRounds": 0,
+      "productionMultiplier": 1
+    },
     "mega_tsunami": {
       "cap": 12,
       "perRound": 4,
@@ -315,10 +329,10 @@
   "megaTsunamiClimateThreshold": 2,
   "opening": {
     "severity": 0.5,
-    "activeTowns": [1, 2, 3],
+    "activeTowns": [4, 2, 3],
     "majorFreeRounds": 3,
     "lossCap": 1,
     "preventDestructionRounds": 3,
-    "incidents": ["flood", "drought", "landslide"]
+    "incidents": ["light_rain", "drought", "landslide"]
   }
 }

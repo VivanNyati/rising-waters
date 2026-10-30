@@ -161,7 +161,7 @@ export function drawRegionalEvents(s: GameState, dice: Dice) {
       (h) => !RISK.disabledEvents.includes(h.type),
     );
     const weight = (id: EventId) => {
-      if (RISK.disabledEvents.includes(id)) return 0;
+      if (RISK.disabledEvents.includes(id) || EVENTS[id].openingOnly) return 0;
       const e = EVENTS[id];
       let w =
         id === "spill"
@@ -474,7 +474,7 @@ export function eventLoss(
     );
     // A serious incident always leaves at least one resource loss or recovery burden.
     const total = Object.values(loss).reduce((n, v) => n + (v ?? 0), 0);
-    if (total > RISK.quizReduction)
+    if (total > RISK.quizReduction || EVENTS[ev.type].openingOnly)
       loss[top] = Math.max(0, (loss[top] ?? 0) - RISK.quizReduction);
   }
   return loss;

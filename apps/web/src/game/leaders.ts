@@ -64,11 +64,11 @@ export function introLines(civ: CivId): string[] {
 export function eventLines(state: GameState, civ: CivId): string[] {
   const ev = state.events[civ];
   const e = EVENTS[ev.type];
-  if (state.round === 1)
+  if (e.openingOnly)
     return [
-      `Look at ${CIVS[state.player].name}: a small ${e.name.toLowerCase()} is the island's only disaster. The other towns are safe for now.`,
-      `${e.tell} We can choose "${e.green.label}" for lasting protection, use a temporary fix, or brace for a small loss. ${e.lesson}`,
-      "Answer one short question, then choose a response. Use these first three gentle decades to build food production and defenses before bigger disasters arrive.",
+      `One gentle rain shower is passing over the whole island. All four towns feel it lightly; let's look at ${CIVS[state.player].name}.`,
+      `${e.tell} Covering food stores is free, or we can spend just 1 wood to plant a rain garden for lasting flood protection.`,
+      "A correct answer can spare our 1 wheat. Then choose a response and build food production and defenses while these first three decades are gentle.",
     ];
   if (ev.quiet)
     return [

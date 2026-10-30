@@ -55,5 +55,10 @@
     "ashRadius": 35,
     "plumeHeight": 40,
     "eruptionFrames": 30
+  },
+  "lightRain": {
+    "framesPerStep": 4,
+    "spacing": 149,
+    "color": "#a8d5df"
   }
 }

@@ -414,6 +414,12 @@ export function hazardPaint(
       a = L.area[i];
     const fx = status[a]?.effects;
     if (!fx && !dam) continue;
+    if (fx?.has("light_rain")) {
+      const rainFrame = clocks?.[a]?.light_rain ?? frame;
+      const step = Math.floor(rainFrame / config.lightRain.framesPerStep);
+      if ((x * 13 + y * 7 + step) % config.lightRain.spacing === 0)
+        pixel(over, x, y, color(config.lightRain.color));
+    }
     const n = visualNoise(Math.floor(x / 5), Math.floor(y / 4), seed);
     const isDam = dam && y > damY && y < damY + phase * 1.1;
     if (low(k) && (fx?.has("flood") || isDam)) {

@@ -98,6 +98,8 @@ export interface EventDef {
   /** A building in a neighboring town that makes this event likelier. */
   cause?: string;
   climateDriven?: boolean;
+  /** Scripted opening event, excluded from normal random draws. */
+  openingOnly?: boolean;
   /** Chain-only hazards replace one of these primary events after a second seeded roll. */
   chainFrom?: EventId[];
   chainChance?: number;

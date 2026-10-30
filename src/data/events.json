@@ -766,5 +766,34 @@
     },
     "lesson": "Offshore earthquakes can send multiple tsunami waves. Evacuate uphill; do not return after the first wave.",
     "source": "https://www.noaa.gov/jetstream/tsunamis"
+  },
+  "light_rain": {
+    "name": "Light rain",
+    "icon": "☂",
+    "color": "#a8d5df",
+    "carrier": "local",
+    "openingOnly": true,
+    "quizTypes": ["flood"],
+    "regions": {},
+    "loss": {
+      "wheat": 1
+    },
+    "tell": "A passing shower has left small puddles around every town. A little wheat may spoil, but buildings and production are safe, and the rain clears by the next decade.",
+    "neighbor": "The same gentle shower reached all four towns. We can each keep water away from stored food and leave room for rain to soak into the ground.",
+    "cheap": {
+      "label": "Cover the food stores",
+      "cost": {},
+      "effect": "A free, temporary response to this small shower. At most 1 wheat is lost; no damage is passed to neighbors and warming stays unchanged."
+    },
+    "green": {
+      "label": "Plant a rain garden",
+      "cost": {
+        "wood": 1
+      },
+      "build": "rain_garden",
+      "effect": "Spend 1 wood on a planted patch that absorbs runoff and provides lasting protection against future floods. At most 1 wheat is lost today."
+    },
+    "lesson": "Keep food dry and give rain somewhere to soak in. Preparing early leaves more resources for building later.",
+    "source": "https://www.epa.gov/soakuptherain/soak-rain-rain-gardens"
   }
 }

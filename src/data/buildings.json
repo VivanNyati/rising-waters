@@ -306,5 +306,14 @@
     "green": true,
     "max": 1,
     "requires": "energy_storage"
+  },
+  "rain_garden": {
+    "name": "Rain garden",
+    "icon": "❧",
+    "cost": {},
+    "description": "A planted patch that absorbs rain and reduces future flood losses.",
+    "protects": ["light_rain", "flood"],
+    "green": true,
+    "earned": true
   }
 }
