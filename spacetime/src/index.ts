@@ -46,8 +46,41 @@ const quizClock = table(
     questionId: t.string(),
   },
 );
-const database = schema({ room, seat, quizClock });
+// Cookie IDs stay private. Only the aggregate is visible to menu subscribers.
+const playerSession = table(
+  { name: "player_session" },
+  { cookieId: t.string().primaryKey() },
+);
+const playerSessionTotal = table(
+  { name: "player_session_total", public: true },
+  { id: t.u8().primaryKey(), count: t.u64() },
+);
+const database = schema({
+  room,
+  seat,
+  quizClock,
+  playerSession,
+  playerSessionTotal,
+});
 export default database;
+
+export const registerPlayerSession = database.reducer(
+  { cookieId: t.string() },
+  (ctx, { cookieId }) => {
+    if (
+      !/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/.test(
+        cookieId,
+      )
+    )
+      throw new SenderError("Invalid player session cookie.");
+    if (ctx.db.playerSession.cookieId.find(cookieId)) return;
+    ctx.db.playerSession.insert({ cookieId });
+    const total = ctx.db.playerSessionTotal.id.find(0);
+    if (total)
+      ctx.db.playerSessionTotal.id.update({ id: 0, count: total.count + 1n });
+    else ctx.db.playerSessionTotal.insert({ id: 0, count: 1n });
+  },
+);
 type Ctx = ReducerCtx<typeof database.schemaType>;
 const code = (value: string) => {
   if (!/^[A-Z0-9]{6}$/.test(value))

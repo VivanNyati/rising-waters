@@ -371,7 +371,7 @@ export default function WorldMap({
   state,
   selected,
   onSelect,
-  initialZoom = 1.4,
+  initialZoom = 1.4 / 2,
   previewFrame,
   showEventMarkers = true,
 }: {
@@ -413,7 +413,16 @@ export default function WorldMap({
     return () => observer.disconnect();
   }, []);
   const baseDevice = Math.max(1, Math.round(fit.device * initialZoom));
-  const scale = Math.max(1, baseDevice + zoomStep) / fit.dpr;
+  const steppedDevice = Math.max(1, baseDevice + zoomStep);
+  const zoomRatio = steppedDevice / baseDevice;
+  // Include the viewport width in the pixel-perfect fit. A height-only fit can leave wide screens
+  // with zero horizontal camera track even though the pointer handler updates scrollLeft.
+  const horizontalDevice = Math.ceil(
+    ((fit.width * fit.dpr) / 320) * initialZoom * zoomRatio,
+  );
+  const scale = Math.max(steppedDevice, horizontalDevice) / fit.dpr;
+  const mapWidth = 320 * scale;
+  const horizontalCenter = Math.max(0, (fit.width - mapWidth) / 2);
   useEffect(() => {
     const el = viewport.current;
     if (!el) return;
@@ -446,7 +455,9 @@ export default function WorldMap({
         aria-label="Map camera. Drag to pan, or use arrow keys."
         onPointerDown={(e) => {
           if (e.button !== 0) return;
+          e.preventDefault();
           const el = e.currentTarget;
+          el.setPointerCapture(e.pointerId);
           suppressClick.current = false;
           drag.current = {
             x: e.clientX,
@@ -460,8 +471,8 @@ export default function WorldMap({
           const d = drag.current;
           if (!d) return;
           if (Math.hypot(e.clientX - d.x, e.clientY - d.y) > 5) {
+            e.preventDefault();
             d.moved = true;
-            e.currentTarget.setPointerCapture(e.pointerId);
             e.currentTarget.classList.add("panning");
             e.currentTarget.scrollLeft = d.left - (e.clientX - d.x);
             e.currentTarget.scrollTop = d.top - (e.clientY - d.y);
@@ -475,6 +486,10 @@ export default function WorldMap({
             e.currentTarget.releasePointerCapture(e.pointerId);
         }}
         onPointerCancel={(e) => {
+          drag.current = null;
+          e.currentTarget.classList.remove("panning");
+        }}
+        onLostPointerCapture={(e) => {
           drag.current = null;
           e.currentTarget.classList.remove("panning");
         }}
@@ -503,12 +518,14 @@ export default function WorldMap({
           className="world-map"
           viewBox="0 0 1280 800"
           style={{
-            width: 320 * scale,
+            width: mapWidth,
             height: 200 * scale,
-            marginLeft: Math.max(0, (fit.width - 320 * scale) / 2),
+            marginLeft: horizontalCenter,
             marginTop: Math.max(0, (fit.height - 200 * scale) / 2),
             marginBottom: "var(--camera-reserve)",
-            marginRight: "var(--camera-side)",
+            // Preserve a small horizontal camera track even when the 2x-wide default framing
+            // fits the entire island, so click-dragging left and right still moves the view.
+            marginRight: horizontalCenter + fit.width * 0.12,
           }}
           role="group"
           aria-label="The valley: select a town to inspect it"

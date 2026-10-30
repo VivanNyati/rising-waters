@@ -50,7 +50,32 @@ Browser identity tokens are scoped to the configured server and database and sav
 
 Online room tables are currently public. Room codes are convenience lobby codes, not confidentiality boundaries. There are no emails, chat, payment information, or real-world personal profiles in the schema. Private forecasts and full anti-cheat isolation need per-player views before a competitive public release.
 
-## Current limits
+## Player session counter
+
+The leader selection menu subscribes separately to the public `player_session_total`
+table. Starting or resuming any game, including offline practice, registers the
+`earthshare-player-session` browser cookie with `register_player_session`. The private
+`player_session` table deduplicates IDs, and the reducer increments the total in the
+same transaction. Reloads, new games, tabs and reconnects with the same cookie count
+once. Clearing or expiring the cookie creates a new session; browsers that block
+cookies are not counted. The cookie lasts up to 400 days, subject to browser limits.
+Only random IDs are stored, with no IP addresses, names or game history.
+
+This uses the existing Spacetime endpoint and database variables; no second database
+or credentials are needed. After changing the module, run `npm run db:publish` locally
+and restart the frontend. Keep `.tools/data` to retain totals. The public deployment
+needs the updated module published to its own configured Spacetime database and the
+updated frontend deployed. No historical visits are backfilled. When Spacetime is
+unavailable, the menu says `UNAVAILABLE`, retries every ten seconds, and practice
+games remain playable. A game played entirely while the database is unreachable
+and closed before reconnection cannot be counted.
+
+Run `npm --prefix apps/web run test:sessions` against a local updated module to check
+concurrent deduplication, new cookies, reconnects, aggregate synchronization and
+private-table access. The integration test adds two test sessions to that database;
+use a separate local database if you need to preserve an exact production total.
+
+## Multiplayer limits
 
 Joining is available only during the first planning phase; locking all current seats starts the game with bots in unclaimed seats. The host advances shared phases. Host migration, disconnected-player timeouts, cleanup/expiry of rooms, and trade offers requiring acceptance are pending. Keep all human participants connected during a demo. Quiz clocks are measured by the database; replayed answers and actions by another civilization are rejected.
 

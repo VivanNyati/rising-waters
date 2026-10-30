@@ -272,7 +272,10 @@
     "smog",
     "grid_failure",
     "pandemic",
-    "supply_shock"
+    "supply_shock",
+    "earthquake",
+    "small_quake",
+    "sea_rise"
   ],
   "fossilOilWeight": 2,
   "fireStormMultiplier": 1.35,

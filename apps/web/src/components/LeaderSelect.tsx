@@ -180,12 +180,14 @@ export default function LeaderSelect({
   setChoice,
   mode,
   onConfirm,
+  sessionCount,
   children,
 }: {
   choice: CivId;
   setChoice: (civ: CivId) => void;
   mode: "solo" | "hotseat";
   onConfirm: (civ: CivId) => void;
+  sessionCount: string;
   children?: ReactNode;
 }) {
   const [cursor, setCursor] = useState(
@@ -250,9 +252,9 @@ export default function LeaderSelect({
   }
 
   // Each seat gets PICK_SECONDS; when time runs out the highlighted (or first free) leader is locked.
-  useEffect(() => setTimer(PICK_SECONDS), [chooser]);
+  useEffect(() => setTimer(PICK_SECONDS), [chooser, mode]);
   useEffect(() => {
-    if (more || picks.length >= seats) return;
+    if (mode === "solo" || more || picks.length >= seats) return;
     if (timer <= 0) {
       const free = highlightTaken
         ? LEADERS.findIndex((l) => takenBy(l.civ) < 0)
@@ -262,7 +264,7 @@ export default function LeaderSelect({
     }
     const t = window.setTimeout(() => setTimer((s) => s - 1), 1000);
     return () => window.clearTimeout(t);
-  }, [timer, more, picks.length, seats]);
+  }, [timer, more, picks.length, seats, mode]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -326,7 +328,7 @@ export default function LeaderSelect({
         <aside className="hs-left">
           <h1>
             SELECT
-            {picks.length < seats && (
+            {mode !== "solo" && picks.length < seats && (
               <span
                 className={`hs-timer ${timer <= 5 ? "low" : ""}`}
                 aria-label={`${timer} seconds left`}
@@ -383,6 +385,9 @@ export default function LeaderSelect({
             </button>
           )}
           <p className="hs-keys">◀ ▶ BROWSE · ENTER LOCK IN</p>
+          <p className="hs-keys" role="status">
+            PLAYER SESSIONS: {sessionCount}
+          </p>
         </aside>
 
         {/* Center: the highlighted leader on a floor plate */}

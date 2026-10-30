@@ -10,6 +10,17 @@ import {
   type Infer as __Infer,
 } from "spacetimedb";
 
+export const PlayerSession = __t.object("PlayerSession", {
+  cookieId: __t.string(),
+});
+export type PlayerSession = __Infer<typeof PlayerSession>;
+
+export const PlayerSessionTotal = __t.object("PlayerSessionTotal", {
+  id: __t.u8(),
+  count: __t.u64(),
+});
+export type PlayerSessionTotal = __Infer<typeof PlayerSessionTotal>;
+
 export const QuizClock = __t.object("QuizClock", {
   id: __t.string(),
   startedMicros: __t.u64(),

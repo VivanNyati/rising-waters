@@ -1,5 +1,6 @@
 node_modules/
 .next/
+.vercel/
 target/
 .env
 .env.*
@@ -11,3 +12,6 @@ infra/.host
 __pycache__/
 spacetime/dist/
 !.env.example
+
+.vercel
+.env*

@@ -36,6 +36,7 @@ export default function Narrator({
   const [index, setIndex] = useState(0);
   const [shown, setShown] = useState(0);
   const [mouth, setMouth] = useState(false);
+  const [minimized, setMinimized] = useState(false);
   const still = useRef(false);
   const line = lines[Math.min(index, lines.length - 1)] ?? "";
   const typing = shown < line.length;
@@ -108,7 +109,7 @@ export default function Narrator({
 
   return (
     <section
-      className={`narrator ${typing ? "is-talking" : ""} ${className}`}
+      className={`narrator ${typing ? "is-talking" : ""} ${minimized ? "is-minimized" : ""} ${className}`}
       aria-label={`${leader.name} speaks`}
       onClick={(e) => {
         if ((e.target as HTMLElement).closest("button, a")) return;
@@ -123,71 +124,94 @@ export default function Narrator({
       }}
       tabIndex={0}
     >
-      <div className="narrator-text">
-        {eyebrow && <span className="eyebrow">{eyebrow}</span>}
-        <p aria-hidden="true">
-          {line.slice(0, shown)}
-          {typing && <i className="narrator-caret">▌</i>}
-        </p>
-        <p className="sr-only" aria-live="polite">
-          {line}
-        </p>
-        {!typing && last && children}
-        <div className="narrator-actions">
-          {canSkipAll && skipAction}
-          {typing ? (
-            <span className="narrator-hint">Click to skip</span>
-          ) : !last ? (
-            <button className="narrator-next" onClick={advance}>
-              ▶ Next{" "}
-              <small>
-                {index + 1}/{lines.length}
-              </small>
-            </button>
-          ) : (
-            !actions &&
-            onDone && (
-              <button className="primary" onClick={onDone}>
-                ▶ Got it
-              </button>
-            )
-          )}
-          {canSkipAll && !skipAction && (
-            <button
-              className="narrator-next"
-              style={{ animation: "none", background: "#e8cf95" }}
-              onKeyDown={(e) => e.stopPropagation()}
-              onClick={skipAll}
-            >
-              ⏭ Skip all
-            </button>
-          )}
-        </div>
-        {actions && (
-          <div
-            className={`narrator-reveal ${!typing && last ? "revealed" : ""}`}
-            aria-hidden={typing || !last}
-            inert={typing || !last}
-          >
-            <div className="narrator-reveal-inner">{actions}</div>
+      {minimized ? (
+        <button
+          className="window-restore"
+          aria-label={`Restore ${leader.name}'s dialogue`}
+          title="Restore dialogue"
+          onClick={() => setMinimized(false)}
+        >
+          □ Show dialogue
+        </button>
+      ) : (
+        <>
+          <div className="narrator-text">
+            {eyebrow && <span className="eyebrow">{eyebrow}</span>}
+            <p aria-hidden="true">
+              {line.slice(0, shown)}
+              {typing && <i className="narrator-caret">▌</i>}
+            </p>
+            <p className="sr-only" aria-live="polite">
+              {line}
+            </p>
+            {!typing && last && children}
+            <div className="narrator-actions">
+              {canSkipAll && skipAction}
+              {typing ? (
+                <span className="narrator-hint">Click to skip</span>
+              ) : !last ? (
+                <button className="narrator-next" onClick={advance}>
+                  ▶ Next{" "}
+                  <small>
+                    {index + 1}/{lines.length}
+                  </small>
+                </button>
+              ) : (
+                !actions &&
+                onDone && (
+                  <button className="primary" onClick={onDone}>
+                    ▶ Got it
+                  </button>
+                )
+              )}
+              {canSkipAll && !skipAction && (
+                <button
+                  className="narrator-next"
+                  style={{ animation: "none", background: "#e8cf95" }}
+                  onKeyDown={(e) => e.stopPropagation()}
+                  onClick={skipAll}
+                >
+                  ⏭ Skip all
+                </button>
+              )}
+            </div>
+            {actions && (
+              <div
+                className={`narrator-reveal ${!typing && last ? "revealed" : ""}`}
+                aria-hidden={typing || !last}
+                inert={typing || !last}
+              >
+                <div className="narrator-reveal-inner">{actions}</div>
+              </div>
+            )}
           </div>
-        )}
-      </div>
-      <figure className="narrator-portrait">
-        <div className="narrator-face">
-          <img src={leaderArt(civ)} alt="" draggable={false} />
-          <img
-            src={leaderArt(civ, true)}
-            alt=""
-            draggable={false}
-            className={mouth ? "open" : ""}
-          />
-        </div>
-        <figcaption style={{ borderColor: leader.color }}>
-          <b>{leader.name}</b>
-          <small style={{ color: leader.color }}>{CIVS[civ].name}</small>
-        </figcaption>
-      </figure>
+          <div className="narrator-window-controls">
+            <button
+              className="window-minimize"
+              aria-label={`Minimize ${leader.name}'s dialogue`}
+              title="Minimize dialogue"
+              onClick={() => setMinimized(true)}
+            >
+              ─
+            </button>
+          </div>
+          <figure className="narrator-portrait">
+            <div className="narrator-face">
+              <img src={leaderArt(civ)} alt="" draggable={false} />
+              <img
+                src={leaderArt(civ, true)}
+                alt=""
+                draggable={false}
+                className={mouth ? "open" : ""}
+              />
+            </div>
+            <figcaption style={{ borderColor: leader.color }}>
+              <b>{leader.name}</b>
+              <small style={{ color: leader.color }}>{CIVS[civ].name}</small>
+            </figcaption>
+          </figure>
+        </>
+      )}
     </section>
   );
 }

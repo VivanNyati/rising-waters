@@ -4902,6 +4902,7 @@ svg image {
   inset: 0;
   height: auto;
   overflow: auto;
+  overscroll-behavior: none;
   touch-action: none;
   cursor: grab;
   scrollbar-width: none;
@@ -5192,6 +5193,144 @@ svg image {
 }
 .trade-feedback {
   min-height: 20px;
+}
+
+/* Keep the project window as one document. Nested scroll panes clipped guidance and recovery rows,
+   while three native scrollbars competed for a very narrow panel. */
+.world-stage .build-panel {
+  overflow-x: hidden;
+  overflow-y: auto;
+  scrollbar-color: #8a5a32 #efe2bc;
+  scrollbar-width: thin;
+}
+.world-stage .build-panel > header {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  flex: none;
+}
+.world-stage .build-panel .planning-summary {
+  max-height: none;
+  overflow: visible;
+  flex: none;
+}
+.world-stage .build-panel .project-tabs,
+.world-stage .build-panel .exchange {
+  flex: none;
+}
+.world-stage .build-panel .build-list {
+  flex: none;
+  min-height: 0;
+  overflow: visible;
+}
+.world-stage .build-panel::-webkit-scrollbar {
+  width: 10px;
+}
+.world-stage .build-panel::-webkit-scrollbar-track {
+  background: #efe2bc;
+  border-left: 2px solid #8a5a32;
+}
+.world-stage .build-panel::-webkit-scrollbar-thumb {
+  background: #8a5a32;
+  border: 2px solid #efe2bc;
+}
+
+/* Compact, docked windows keep the same screen anchors while revealing more of the map. */
+.world-stage .narrator-docked {
+  width: min(944px, calc(80% - 16px));
+  max-width: 944px;
+}
+.window-minimize,
+.window-restore {
+  min-width: 44px;
+  min-height: 44px;
+  padding: 6px 10px;
+  color: #2a1a0e;
+  background: #f7d9a0;
+  border: 3px solid;
+  border-color: #fff0a1 #3e2414 #3e2414 #fff0a1;
+  box-shadow: 3px 3px #1a120a;
+  font-family: "VT323", monospace;
+  font-size: 20px;
+  line-height: 1;
+}
+.window-minimize:hover,
+.window-minimize:focus-visible,
+.window-restore:hover,
+.window-restore:focus-visible {
+  background: #ffe379;
+}
+.narrator-window-controls {
+  flex: none;
+  width: 44px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+}
+.narrator-window-controls .window-minimize {
+  width: 44px;
+  padding-inline: 0;
+}
+.world-stage .narrator-docked.is-minimized {
+  left: auto;
+  width: auto;
+  min-width: 0;
+  max-width: none;
+  padding: 6px;
+  overflow: visible;
+  cursor: default;
+}
+.build-panel .window-actions {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.build-panel > header .eyebrow {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.world-stage .build-panel.is-minimized {
+  top: 76px;
+  bottom: auto;
+  height: auto;
+  min-height: 0;
+  max-height: none;
+  width: min(310px, calc(100% - 20px));
+  overflow: hidden;
+}
+.world-stage .build-panel.is-minimized > header {
+  position: static;
+}
+@media (min-width: 901px) {
+  .world-stage .narrator-docked {
+    gap: 10px;
+    padding: 8px;
+  }
+  .world-stage .narrator-text {
+    padding: 10px 14px;
+  }
+  .world-stage .narrator-text > p {
+    font-size: 25px;
+  }
+  .world-stage .narrator-portrait {
+    width: 138px;
+  }
+  .world-stage .narrator-face {
+    width: 133px;
+    height: 133px;
+  }
+}
+@media (max-width: 900px) {
+  .world-stage .narrator-docked {
+    right: 10px;
+    width: calc(80% - 10px);
+    max-width: none;
+  }
+  .world-stage .build-panel.is-minimized {
+    top: auto;
+    bottom: 220px;
+  }
 }
 @media (max-width: 600px) {
   .world-stage .map-viewport {

@@ -41,10 +41,12 @@ import BeginQuestionReducer from "./begin_question_reducer";
 import CreateWorldReducer from "./create_world_reducer";
 import JoinWorldReducer from "./join_world_reducer";
 import ReadyReducer from "./ready_reducer";
+import RegisterPlayerSessionReducer from "./register_player_session_reducer";
 
 // Import all procedure arg schemas
 
 // Import all table schema definitions
+import PlayerSessionTotalRow from "./player_session_total_table";
 import RoomRow from "./room_table";
 import SeatRow from "./seat_table";
 
@@ -52,6 +54,27 @@ import SeatRow from "./seat_table";
 
 /** The schema information for all tables in this module. This is defined the same was as the tables would have been defined in the server. */
 const tablesSchema = __schema({
+  playerSessionTotal: __table(
+    {
+      name: "player_session_total",
+      indexes: [
+        {
+          accessor: "id",
+          name: "player_session_total_id_idx_btree",
+          algorithm: "btree",
+          columns: ["id"],
+        },
+      ],
+      constraints: [
+        {
+          name: "player_session_total_id_key",
+          constraint: "unique",
+          columns: ["id"],
+        },
+      ],
+    },
+    PlayerSessionTotalRow,
+  ),
   room: __table(
     {
       name: "room",
@@ -103,6 +126,7 @@ const reducersSchema = __reducers(
   __reducerSchema("create_world", CreateWorldReducer),
   __reducerSchema("join_world", JoinWorldReducer),
   __reducerSchema("ready", ReadyReducer),
+  __reducerSchema("register_player_session", RegisterPlayerSessionReducer),
 );
 
 /** The schema information for all procedures in this module. This is defined the same way as the procedures would have been defined in the server. */

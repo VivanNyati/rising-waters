@@ -109,6 +109,7 @@ export default function DisasterPreview() {
   const [playing, setPlaying] = useState(true);
   const [restart, setRestart] = useState(0);
   const [scrub, setScrub] = useState<number | undefined>();
+  const [controlsMinimized, setControlsMinimized] = useState(false);
   const current = CASES[index];
   const step = (direction: number) => {
     setScrub(undefined);
@@ -193,82 +194,118 @@ export default function DisasterPreview() {
             style={{
               position: "absolute",
               zIndex: 8,
-              padding: 16,
+              padding: controlsMinimized ? 6 : 16,
               background: "#efe2bc",
               color: "#2a1a0e",
               border: "4px solid #8a5a32",
               boxShadow: "5px 5px #1a120a",
-              width: "min(360px, calc(100% - 32px))",
+              width: controlsMinimized
+                ? "auto"
+                : "min(360px, calc(100% - 32px))",
             }}
           >
-            <b>
-              VISUAL TEST · {index + 1}/{CASES.length} ·{" "}
-              {current.label ?? EVENTS[current.event].name}
-            </b>
-            <p style={{ margin: "8px 0", fontSize: 22 }} aria-live="polite">
-              {CIVS[current.civ].name}: {current.note}
-            </p>
-            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-              <button onClick={() => step(-1)}>← Previous</button>
-              <button onClick={() => step(1)}>Next →</button>
+            {controlsMinimized ? (
               <button
-                aria-pressed={playing}
-                onClick={() => setPlaying((p) => !p)}
+                onClick={() => setControlsMinimized(false)}
+                aria-expanded="false"
+                aria-label="Restore disaster preview controls"
+                title="Restore disaster preview controls"
+                style={{ minWidth: 44, minHeight: 44 }}
               >
-                {playing ? "Pause sequence" : "Auto-play"}
+                □ Show controls
               </button>
-              <button
-                onClick={() => {
-                  setScrub(undefined);
-                  setRestart((n) => n + 1);
-                }}
-              >
-                Replay effect
-              </button>
-              <select
-                aria-label="Preview disaster"
-                value={index}
-                onChange={(e) => {
-                  setIndex(Number(e.target.value));
-                  setScrub(undefined);
-                  setRestart((n) => n + 1);
-                }}
-                style={{
-                  minHeight: 44,
-                  fontSize: 20,
-                  color: "#2a1a0e",
-                  background: "#f7d9a0",
-                }}
-              >
-                {CASES.map((c, n) => (
-                  <option key={`${c.event}:${n}`} value={n}>
-                    {c.label ?? EVENTS[c.event].name}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <label style={{ display: "block", marginTop: 12, fontSize: 20 }}>
-              Inspect animation:{" "}
-              {scrub === undefined
-                ? "live"
-                : `${(scrub / 6).toFixed(1)} seconds`}
-              <input
-                type="range"
-                aria-label="Animation frame"
-                min={0}
-                max={300}
-                value={scrub ?? 0}
-                onChange={(e) => {
-                  setPlaying(false);
-                  setScrub(Number(e.target.value));
-                }}
-                style={{ display: "block", width: "100%", minHeight: 44 }}
-              />
-            </label>
-            <p style={{ margin: "8px 0 0", fontSize: 20 }}>
-              Automatic sequence waits for the tsunami aftermath; other
-              disasters run for 35 seconds. Your saved game is untouched.
-            </p>
+            ) : (
+              <>
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    gap: 12,
+                  }}
+                >
+                  <b>
+                    VISUAL TEST · {index + 1}/{CASES.length} ·{" "}
+                    {current.label ?? EVENTS[current.event].name}
+                  </b>
+                  <button
+                    onClick={() => setControlsMinimized(true)}
+                    aria-expanded="true"
+                    aria-label="Minimize disaster preview controls"
+                    title="Minimize"
+                    style={{ minWidth: 44, minHeight: 44, flex: "none" }}
+                  >
+                    ─
+                  </button>
+                </div>
+                <p style={{ margin: "8px 0", fontSize: 22 }} aria-live="polite">
+                  {CIVS[current.civ].name}: {current.note}
+                </p>
+                <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                  <button onClick={() => step(-1)}>← Previous</button>
+                  <button onClick={() => step(1)}>Next →</button>
+                  <button
+                    aria-pressed={playing}
+                    onClick={() => setPlaying((p) => !p)}
+                  >
+                    {playing ? "Pause sequence" : "Auto-play"}
+                  </button>
+                  <button
+                    onClick={() => {
+                      setScrub(undefined);
+                      setRestart((n) => n + 1);
+                    }}
+                  >
+                    Replay effect
+                  </button>
+                  <select
+                    aria-label="Preview disaster"
+                    value={index}
+                    onChange={(e) => {
+                      setIndex(Number(e.target.value));
+                      setScrub(undefined);
+                      setRestart((n) => n + 1);
+                    }}
+                    style={{
+                      minHeight: 44,
+                      fontSize: 20,
+                      color: "#2a1a0e",
+                      background: "#f7d9a0",
+                    }}
+                  >
+                    {CASES.map((c, n) => (
+                      <option key={`${c.event}:${n}`} value={n}>
+                        {c.label ?? EVENTS[c.event].name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <label
+                  style={{ display: "block", marginTop: 12, fontSize: 20 }}
+                >
+                  Inspect animation:{" "}
+                  {scrub === undefined
+                    ? "live"
+                    : `${(scrub / 6).toFixed(1)} seconds`}
+                  <input
+                    type="range"
+                    aria-label="Animation frame"
+                    min={0}
+                    max={300}
+                    value={scrub ?? 0}
+                    onChange={(e) => {
+                      setPlaying(false);
+                      setScrub(Number(e.target.value));
+                    }}
+                    style={{ display: "block", width: "100%", minHeight: 44 }}
+                  />
+                </label>
+                <p style={{ margin: "8px 0 0", fontSize: 20 }}>
+                  Automatic sequence waits for the tsunami aftermath; other
+                  disasters run for 35 seconds. Your saved game is untouched.
+                </p>
+              </>
+            )}
           </section>
         </WorldStage>
       </div>

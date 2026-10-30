@@ -55,6 +55,7 @@ import {
 } from "@/game/leaders";
 import { townOf, KINGDOM } from "@/game/towns";
 import { useWorld } from "@/game/useWorld";
+import { usePlayerSessions } from "@/game/usePlayerSessions";
 import LeaderSelect from "./LeaderSelect";
 import Narrator from "./Narrator";
 import RadioControl from "./RadioControl";
@@ -108,6 +109,7 @@ export default function Game() {
   const [roomCode, setRoomCode] = useState("");
   const [hostStarted, setHostStarted] = useState(false);
   const online = !!world.roomId;
+  const sessionCount = usePlayerSessions(!!state);
 
   useEffect(() => {
     try {
@@ -217,6 +219,7 @@ export default function Game() {
           choice={choice}
           setChoice={setChoice}
           mode={mode}
+          sessionCount={sessionCount}
           onConfirm={(civ) => start(civ)}
         >
           <div className="ls-option-group">
@@ -844,214 +847,246 @@ function BuildPanel({
     (upkeep(town).wheat ?? 0) - town.stock.wheat - income(state, civ).wheat,
   );
   const [tab, setTab] = useState<"build" | "research">("build");
+  const [minimized, setMinimized] = useState(false);
   const buildable = Object.entries(BUILDINGS).filter(([, b]) => !b.earned);
   return (
-    <section className="build-panel" aria-label="Build">
+    <section
+      className={`build-panel ${minimized ? "is-minimized" : ""}`}
+      aria-label="Build and research"
+    >
       <header>
         <span className="eyebrow">
           BUILD · {townOf(civ).name.toUpperCase()}
         </span>
-        <button className="primary" onClick={onEnd}>
-          End turn <ArrowRight size={16} />
-        </button>
-      </header>
-      <div className="planning-summary">
-        <b>
-          {Math.max(0, ECONOMY.actionsPerRound - (town.actionsUsed ?? 0))}/
-          {ECONOMY.actionsPerRound} project actions · storage{" "}
-          {ECONOMY.storageCapacity} per resource
-        </b>
-        <p>
-          Next production: {describe(income(state, civ))}. Upkeep:{" "}
-          {describe(upkeep(town))}.
-        </p>
-        {recommendations(state, civ)
-          .slice(0, 2)
-          .map((line) => (
-            <p key={line}>{line}</p>
-          ))}
-        {(state.scheduled ?? [])
-          .filter((h) => h.target === civ)
-          .map((h) => (
-            <p key={`${h.type}:${h.arrives}`}>
-              ⚠ Round {h.arrives}: {EVENTS[h.type].name} from{" "}
-              {CIVS[h.origin].name}. {h.reason}
-            </p>
-          ))}
-        {town.research && (
-          <p>
-            Research: {RESEARCH[town.research.id].name} ·{" "}
-            {town.research.remaining} round(s) remaining.
-          </p>
-        )}
-      </div>
-      <div className="project-tabs" aria-label="Project category">
-        <button aria-pressed={tab === "build"} onClick={() => setTab("build")}>
-          <Hammer size={20} aria-hidden="true" /> Build & recover
-        </button>
-        <button
-          aria-pressed={tab === "research"}
-          onClick={() => setTab("research")}
-        >
-          <FlaskConical size={20} aria-hidden="true" /> Research
-        </button>
-      </div>
-      <div className="build-list">
-        {tab === "build" &&
-          recoveryNeeds(town).map((h) => {
-            const err = actionError(state, {
-              type: "contain",
-              civ,
-              hazard: h.type,
-            });
-            return (
-              <button
-                key={h.type}
-                className="build-row recovery-row"
-                disabled={!!err}
-                title={
-                  err ?? "Lower severity by 1 and shorten recovery by 2 rounds."
-                }
-                onClick={() => act({ type: "contain", civ, hazard: h.type })}
-              >
-                <span className="build-icon">{EVENTS[h.type].icon}</span>
-                <span className="build-name">
-                  <b>Recover: {EVENTS[h.type].name}</b>
-                  <small>
-                    Severity {h.severity.toFixed(1)} · {h.remaining} rounds.
-                    Reduce severity and recovery time.
-                  </small>
-                </span>
-                <Costs cost={recoveryCost(h.type)} />
-              </button>
-            );
-          })}
-        {tab === "research" &&
-          Object.entries(RESEARCH).map(([id, t]) => {
-            const done = technologies(town).includes(id);
-            const err = actionError(state, {
-              type: "research",
-              civ,
-              technology: id,
-            });
-            return (
-              <button
-                key={id}
-                className="build-row green"
-                disabled={done || !!err}
-                title={err ?? t.description}
-                onClick={() => act({ type: "research", civ, technology: id })}
-              >
-                <span className="build-icon">✧</span>
-                <span className="build-name">
-                  <b>
-                    {t.name}{" "}
-                    {done
-                      ? "✓"
-                      : `· ${t.turns} round${t.turns === 1 ? "" : "s"}`}
-                  </b>
-                  <small>
-                    {t.description}
-                    {err && !done ? ` ${err}` : ""}
-                  </small>
-                </span>
-                <Costs cost={t.cost} />
-              </button>
-            );
-          })}
-        {tab === "build" &&
-          buildable.map(([id, b]) => {
-            const err = actionError(state, {
-              type: "build",
-              civ,
-              building: id,
-            });
-            return (
-              <button
-                key={id}
-                className={`build-row ${b.green ? "green" : ""} ${b.dirty ? "dirty" : ""}`}
-                disabled={!!err}
-                title={err ?? b.description}
-                onClick={() => act({ type: "build", civ, building: id })}
-              >
-                <span className="build-icon">{b.icon}</span>
-                <span className="build-name">
-                  <b>{b.name}</b>
-                  <small>{b.description}</small>
-                </span>
-                <Costs cost={b.cost} />
-                <span className="build-count">
-                  {builtCount(town, id)}/{b.max}
-                </span>
-              </button>
-            );
-          })}
-      </div>
-      <div className="exchange">
-        <div className="trade-heading">
-          <Ship size={20} aria-hidden="true" />
-          <b>Harbor exchange</b>
-          <span>No project action</span>
+        <div className="window-actions">
+          {!minimized && (
+            <button className="primary" onClick={onEnd}>
+              End turn <ArrowRight size={16} />
+            </button>
+          )}
+          <button
+            className={minimized ? "window-restore" : "window-minimize"}
+            aria-label={
+              minimized
+                ? "Restore build and research menu"
+                : "Minimize build and research menu"
+            }
+            title={minimized ? "Restore menu" : "Minimize menu"}
+            onClick={() => setMinimized((value) => !value)}
+          >
+            {minimized ? "□ Show menu" : "─"}
+          </button>
         </div>
-        <p className="trade-guidance">
-          {foodGap
-            ? `Food shortfall: ${foodGap} wheat next round. Trade to cover upkeep.`
-            : "Turn spare cargo into supplies for recovery, building and research."}
-        </p>
-        <ResourceIcon resource={give} size={24} />
-        <select
-          aria-label="Give"
-          value={give}
-          onChange={(e) => setGive(e.target.value as Resource)}
-        >
-          {RESOURCES.map((r) => (
-            <option key={r} value={r}>
-              {EXCHANGE_RATE} {RESOURCE_META[r].name}
-            </option>
-          ))}
-        </select>
-        <img
-          className="trade-arrow"
-          src={`/assets/arrows/${KINGDOM[civ]}-swap.png`}
-          width={32}
-          height={32}
-          alt="for"
-        />
-        <ResourceIcon resource={get} size={24} />
-        <select
-          aria-label="Get"
-          value={get}
-          onChange={(e) => setGet(e.target.value as Resource)}
-        >
-          {RESOURCES.map((r) => (
-            <option key={r} value={r}>
-              1 {RESOURCE_META[r].name}
-            </option>
-          ))}
-        </select>
-        <button
-          disabled={!!tradeError}
-          title={
-            tradeError ??
-            `Ship ${EXCHANGE_RATE} ${RESOURCE_META[give].name} for 1 ${RESOURCE_META[get].name}`
-          }
-          className="trade-submit"
-          onClick={() => act({ type: "exchange", civ, give, get })}
-        >
-          <Ship size={20} aria-hidden="true" /> Ship cargo
-        </button>
-        <p className="trade-preview">
-          {EXCHANGE_RATE} {RESOURCE_META[give].name} → 1{" "}
-          {RESOURCE_META[get].name} · In storage: {town.stock[give]} /{" "}
-          {town.stock[get]}
-        </p>
-        <p className="trade-feedback" role="status">
-          {lastTrade
-            ? `${lastTrade.text}${tradeError ? ` ${tradeError}` : ""}`
-            : (tradeError ??
-              "Ready to sail. Trading does not use your three project actions.")}
-        </p>
-      </div>
+      </header>
+      {!minimized && (
+        <>
+          <div className="planning-summary">
+            <b>
+              {Math.max(0, ECONOMY.actionsPerRound - (town.actionsUsed ?? 0))}/
+              {ECONOMY.actionsPerRound} project actions · storage{" "}
+              {ECONOMY.storageCapacity} per resource
+            </b>
+            <p>
+              Next production: {describe(income(state, civ))}. Upkeep:{" "}
+              {describe(upkeep(town))}.
+            </p>
+            {recommendations(state, civ)
+              .slice(0, 2)
+              .map((line) => (
+                <p key={line}>{line}</p>
+              ))}
+            {(state.scheduled ?? [])
+              .filter((h) => h.target === civ)
+              .map((h) => (
+                <p key={`${h.type}:${h.arrives}`}>
+                  ⚠ Round {h.arrives}: {EVENTS[h.type].name} from{" "}
+                  {CIVS[h.origin].name}. {h.reason}
+                </p>
+              ))}
+            {town.research && (
+              <p>
+                Research: {RESEARCH[town.research.id].name} ·{" "}
+                {town.research.remaining} round(s) remaining.
+              </p>
+            )}
+          </div>
+          <div className="project-tabs" aria-label="Project category">
+            <button
+              aria-pressed={tab === "build"}
+              onClick={() => setTab("build")}
+            >
+              <Hammer size={20} aria-hidden="true" /> Build & recover
+            </button>
+            <button
+              aria-pressed={tab === "research"}
+              onClick={() => setTab("research")}
+            >
+              <FlaskConical size={20} aria-hidden="true" /> Research
+            </button>
+          </div>
+          <div className="build-list">
+            {tab === "build" &&
+              recoveryNeeds(town).map((h) => {
+                const err = actionError(state, {
+                  type: "contain",
+                  civ,
+                  hazard: h.type,
+                });
+                return (
+                  <button
+                    key={h.type}
+                    className="build-row recovery-row"
+                    disabled={!!err}
+                    title={
+                      err ??
+                      "Lower severity by 1 and shorten recovery by 2 rounds."
+                    }
+                    onClick={() =>
+                      act({ type: "contain", civ, hazard: h.type })
+                    }
+                  >
+                    <span className="build-icon">{EVENTS[h.type].icon}</span>
+                    <span className="build-name">
+                      <b>Recover: {EVENTS[h.type].name}</b>
+                      <small>
+                        Severity {h.severity.toFixed(1)} · {h.remaining} rounds.
+                        Reduce severity and recovery time.
+                      </small>
+                    </span>
+                    <Costs cost={recoveryCost(h.type)} />
+                  </button>
+                );
+              })}
+            {tab === "research" &&
+              Object.entries(RESEARCH).map(([id, t]) => {
+                const done = technologies(town).includes(id);
+                const err = actionError(state, {
+                  type: "research",
+                  civ,
+                  technology: id,
+                });
+                return (
+                  <button
+                    key={id}
+                    className="build-row green"
+                    disabled={done || !!err}
+                    title={err ?? t.description}
+                    onClick={() =>
+                      act({ type: "research", civ, technology: id })
+                    }
+                  >
+                    <span className="build-icon">✧</span>
+                    <span className="build-name">
+                      <b>
+                        {t.name}{" "}
+                        {done
+                          ? "✓"
+                          : `· ${t.turns} round${t.turns === 1 ? "" : "s"}`}
+                      </b>
+                      <small>
+                        {t.description}
+                        {err && !done ? ` ${err}` : ""}
+                      </small>
+                    </span>
+                    <Costs cost={t.cost} />
+                  </button>
+                );
+              })}
+            {tab === "build" &&
+              buildable.map(([id, b]) => {
+                const err = actionError(state, {
+                  type: "build",
+                  civ,
+                  building: id,
+                });
+                return (
+                  <button
+                    key={id}
+                    className={`build-row ${b.green ? "green" : ""} ${b.dirty ? "dirty" : ""}`}
+                    disabled={!!err}
+                    title={err ?? b.description}
+                    onClick={() => act({ type: "build", civ, building: id })}
+                  >
+                    <span className="build-icon">{b.icon}</span>
+                    <span className="build-name">
+                      <b>{b.name}</b>
+                      <small>{b.description}</small>
+                    </span>
+                    <Costs cost={b.cost} />
+                    <span className="build-count">
+                      {builtCount(town, id)}/{b.max}
+                    </span>
+                  </button>
+                );
+              })}
+          </div>
+          <div className="exchange">
+            <div className="trade-heading">
+              <Ship size={20} aria-hidden="true" />
+              <b>Harbor exchange</b>
+              <span>No project action</span>
+            </div>
+            <p className="trade-guidance">
+              {foodGap
+                ? `Food shortfall: ${foodGap} wheat next round. Trade to cover upkeep.`
+                : "Turn spare cargo into supplies for recovery, building and research."}
+            </p>
+            <ResourceIcon resource={give} size={24} />
+            <select
+              aria-label="Give"
+              value={give}
+              onChange={(e) => setGive(e.target.value as Resource)}
+            >
+              {RESOURCES.map((r) => (
+                <option key={r} value={r}>
+                  {EXCHANGE_RATE} {RESOURCE_META[r].name}
+                </option>
+              ))}
+            </select>
+            <img
+              className="trade-arrow"
+              src={`/assets/arrows/${KINGDOM[civ]}-swap.png`}
+              width={32}
+              height={32}
+              alt="for"
+            />
+            <ResourceIcon resource={get} size={24} />
+            <select
+              aria-label="Get"
+              value={get}
+              onChange={(e) => setGet(e.target.value as Resource)}
+            >
+              {RESOURCES.map((r) => (
+                <option key={r} value={r}>
+                  1 {RESOURCE_META[r].name}
+                </option>
+              ))}
+            </select>
+            <button
+              disabled={!!tradeError}
+              title={
+                tradeError ??
+                `Ship ${EXCHANGE_RATE} ${RESOURCE_META[give].name} for 1 ${RESOURCE_META[get].name}`
+              }
+              className="trade-submit"
+              onClick={() => act({ type: "exchange", civ, give, get })}
+            >
+              <Ship size={20} aria-hidden="true" /> Ship cargo
+            </button>
+            <p className="trade-preview">
+              {EXCHANGE_RATE} {RESOURCE_META[give].name} → 1{" "}
+              {RESOURCE_META[get].name} · In storage: {town.stock[give]} /{" "}
+              {town.stock[get]}
+            </p>
+            <p className="trade-feedback" role="status">
+              {lastTrade
+                ? `${lastTrade.text}${tradeError ? ` ${tradeError}` : ""}`
+                : (tradeError ??
+                  "Ready to sail. Trading does not use your three project actions.")}
+            </p>
+          </div>
+        </>
+      )}
     </section>
   );
 }

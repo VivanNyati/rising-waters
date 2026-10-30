@@ -95,10 +95,8 @@ if (operation === "start") {
     "--module-path",
     "spacetime",
   ]);
-  run(process.platform === "win32" ? "npx.cmd" : "npx", [
-    "--prefix",
-    "apps/web",
-    "prettier",
+  run(process.execPath, [
+    "apps/web/node_modules/prettier/bin/prettier.cjs",
     "--write",
     "apps/web/src/module_bindings",
   ]);

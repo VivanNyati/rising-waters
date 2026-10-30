@@ -1,4 +1,8 @@
-# Earthshare
+# Rising Waters (Earthshare)
+
+A multiplayer interactive climate disaster engine-builder game focused on teaching the younger generation about broad disaster control, innovation, and practical low-level climate information.
+
+Originally built by the Earthshare team for MHacks 2026. Original project repository: [john-yang-11/mhacks26](https://github.com/john-yang-11/mhacks26).
 
 A playable environmental strategy tycoon built entirely in TypeScript: Next.js/React in the browser, and a native SpacetimeDB 2.10.2 module as the backend. There is no Flask or Python game server.
 

@@ -11,7 +11,8 @@
     "simulate": "tsx tests/simulate.ts",
     "format": "prettier --write src tests next.config.ts tsconfig.json package.json",
     "format:check": "prettier --check src tests next.config.ts tsconfig.json package.json",
-    "test:integration": "tsx tests/spacetime.integration.ts"
+    "test:integration": "tsx tests/spacetime.integration.ts",
+    "test:sessions": "tsx tests/playerSessions.integration.ts"
   },
   "dependencies": {
     "lucide-react": "^1.51.0",

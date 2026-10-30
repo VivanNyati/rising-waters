@@ -89,6 +89,78 @@ export interface WorldLayers {
   hash: Uint8Array;
 }
 
+const NORTH_BIOME_EDGE = 66;
+const NORTH_BIOME_FEATHER = 9;
+const BAYER_4 = [
+  0 / 16,
+  8 / 16,
+  2 / 16,
+  10 / 16,
+  12 / 16,
+  4 / 16,
+  14 / 16,
+  6 / 16,
+  3 / 16,
+  11 / 16,
+  1 / 16,
+  9 / 16,
+  15 / 16,
+  7 / 16,
+  13 / 16,
+  5 / 16,
+];
+
+/**
+ * The source art changes biomes on row 66. Feather that join with solid palette pixels sampled
+ * from both sides, retaining the crisp pixel style while removing the map-wide horizontal cut.
+ */
+function featherNorthBiomeEdge(
+  base: Uint8Array,
+  kind: Uint8Array,
+  hash: Uint8Array,
+) {
+  const canFeather = (k: number) =>
+    k === KIND.marsh ||
+    k === KIND.forest ||
+    k === KIND.grass ||
+    k === KIND.pasture ||
+    k === KIND.rock ||
+    k === KIND.snow ||
+    k === KIND.field;
+  const original = base.slice();
+  for (
+    let y = NORTH_BIOME_EDGE - NORTH_BIOME_FEATHER;
+    y <= NORTH_BIOME_EDGE + NORTH_BIOME_FEATHER;
+    y++
+  ) {
+    for (let x = 0; x < MAP_W; x++) {
+      const i = y * MAP_W + x;
+      if (!canFeather(kind[i])) continue;
+
+      // A slowly wandering centre prevents the fade itself from becoming another straight line.
+      const edge =
+        NORTH_BIOME_EDGE +
+        Math.round(Math.sin(x / 13) * 2) +
+        ((hash[(NORTH_BIOME_EDGE - 12) * MAP_W + x] % 3) - 1);
+      const southWeight = Math.max(
+        0,
+        Math.min(
+          1,
+          (y - (edge - NORTH_BIOME_FEATHER)) / (NORTH_BIOME_FEATHER * 2),
+        ),
+      );
+      const threshold = BAYER_4[(y & 3) * 4 + (x & 3)];
+      const sampleY =
+        threshold < southWeight
+          ? NORTH_BIOME_EDGE + NORTH_BIOME_FEATHER
+          : NORTH_BIOME_EDGE - NORTH_BIOME_FEATHER;
+      const sampleX = Math.max(0, Math.min(MAP_W - 1, x + ((hash[i] % 5) - 2)));
+      const sample = sampleY * MAP_W + sampleX;
+      if (canFeather(kind[sample])) base[i] = original[sample];
+    }
+  }
+}
+
 function unrle(runs: number[]): Uint8Array {
   const out = new Uint8Array(MAP_W * MAP_H);
   let o = 0;
@@ -138,15 +210,17 @@ let cached: WorldLayers | undefined;
 export function worldLayers(): WorldLayers {
   if (cached) return cached;
   const kind = unrle(world.kind);
+  const base = fromBase64(world.base);
   const hash = new Uint8Array(MAP_W * MAP_H);
   for (let i = 0; i < hash.length; i++) {
     let h = Math.imul(i ^ 0x9e3779b9, 0x85ebca6b);
     h = Math.imul(h ^ (h >>> 13), 0xc2b2ae35);
     hash[i] = (h ^ (h >>> 16)) & 255;
   }
+  featherNorthBiomeEdge(base, kind, hash);
   const depth = distance(kind, (k) => k !== KIND.water);
   cached = {
-    base: fromBase64(world.base),
+    base,
     palette: world.palette.map(rgb),
     kind,
     area: unrle(world.area),
@@ -481,6 +555,13 @@ export function renderWorldView(
     overlay[o + 2] = out[o + 2];
     overlay[o + 3] = 255;
   };
+  const coverColor = (o: number, color: readonly number[]) => {
+    if (!overlay) return;
+    overlay[o] = color[0];
+    overlay[o + 1] = color[1];
+    overlay[o + 2] = color[2];
+    overlay[o + 3] = 255;
+  };
   // A camera resize must never let the compositor write beyond its current buffer.
   const width = Math.floor(view.width);
   const height = Math.min(
@@ -623,7 +704,8 @@ export function renderWorldView(
                   out[o + channel] * (1 - aftermath) +
                     color[channel] * aftermath,
                 );
-              cover(o);
+              if (aftermath > BAYER_4[(y & 3) * 4 + (x & 3)])
+                coverColor(o, color);
             }
             // Strip the snow caps while leaving rock faces and their outlines.
             if (out[o] > 190 && out[o + 1] > 190 && out[o + 2] > 180)
@@ -682,7 +764,11 @@ export function renderWorldView(
               out[o + channel] = Math.round(
                 out[o + channel] * (1 - opacity) + c[channel] * opacity,
               );
-            if (opacity > 0) cover(o);
+            if (opacity > 0) {
+              if (large) {
+                if (opacity > BAYER_4[(y & 3) * 4 + (x & 3)]) coverColor(o, c);
+              } else cover(o);
+            }
           }
         }
         let landFade = 1;
@@ -767,7 +853,11 @@ export function renderWorldView(
           out[o + channel] = Math.round(
             out[o + channel] * (1 - opacity) + c[channel] * opacity,
           );
-        if (opacity > 0) cover(o);
+        if (opacity > 0) {
+          if (large) {
+            if (opacity > BAYER_4[(y & 3) * 4 + (x & 3)]) coverColor(o, c);
+          } else cover(o);
+        }
       }
     // Roofs and trunks are swept forward, leaving rubble behind the crest.
     // These are visual consequences; only the reducer removes gameplay buildings.
