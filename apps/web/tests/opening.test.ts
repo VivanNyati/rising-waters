@@ -150,3 +150,24 @@ test("the scripted shower never enters the later random disaster pool", () => {
     }
   }
 });
+
+test("drizzle has short falling streaks, independent timing, and deterministic world placement", () => {
+  const s = createGame();
+  const L = worldLayers(),
+    status = areaStatus(s);
+  const a = hazardPaint(L, status, 24, s.seed).over;
+  assert.deepEqual(hazardPaint(L, status, 24, s.seed).over, a);
+  assert.notDeepEqual(hazardPaint(L, status, 30, s.seed).over, a);
+  assert.notDeepEqual(hazardPaint(L, status, 24, s.seed + 1).over, a);
+  let adjacent = 0;
+  for (let y = 1; y < 200; y++)
+    for (let x = 1; x < 320; x++) {
+      const i = y * 320 + x;
+      if (a[i * 4 + 3] && (a[(i - 320) * 4 + 3] || a[(i - 321) * 4 + 3]))
+        adjacent++;
+    }
+  assert(
+    adjacent > 30,
+    "rain should form falling streaks rather than isolated flickering dots",
+  );
+});

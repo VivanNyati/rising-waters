@@ -57,8 +57,17 @@
     "eruptionFrames": 30
   },
   "lightRain": {
-    "framesPerStep": 4,
-    "spacing": 149,
-    "color": "#a8d5df"
+    "framesPerStep": 3,
+    "cellSize": 19,
+    "density": 0.82,
+    "fallFrames": 27,
+    "restFrames": 18,
+    "splashFrames": 6,
+    "fallDistance": 19,
+    "drift": 4,
+    "streakLength": 3,
+    "color": "#a7cbd5",
+    "tailColor": "#718f9f",
+    "splashColor": "#8fb4c1"
   }
 }

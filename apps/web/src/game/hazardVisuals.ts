@@ -391,6 +391,63 @@ export function fireArrivals(
   return arrival;
 }
 
+/** Independent, seeded droplets fall along short tracks, then make a tiny ground splash.
+ * World coordinates keep the weather attached to the map during camera movement. */
+function paintLightRain(
+  out: Uint8ClampedArray,
+  L: WorldLayers,
+  status: AreaStatus[],
+  frame: number,
+  seed: number,
+  clocks?: HazardFrames,
+) {
+  const rain = config.lightRain;
+  const head = color(rain.color),
+    tail = color(rain.tailColor),
+    splash = color(rain.splashColor);
+  const put = (x: number, y: number, c: Color) => {
+    const px = Math.round(x),
+      py = Math.round(y);
+    if (px < 0 || py < 0 || px >= W || py >= H) return;
+    if (status[L.area[py * W + px]]?.effects.has("light_rain"))
+      pixel(out, px, py, c);
+  };
+  for (let gy = 0; gy < Math.ceil(H / rain.cellSize); gy++) {
+    for (let gx = 0; gx < Math.ceil(W / rain.cellSize); gx++) {
+      if (visualNoise(gx, gy, seed + 101) > rain.density) continue;
+      const x =
+        gx * rain.cellSize + visualNoise(gx, gy, seed + 107) * rain.cellSize;
+      const y =
+        gy * rain.cellSize + visualNoise(gx, gy, seed + 109) * rain.cellSize;
+      const area =
+        L.area[
+          Math.min(H - 1, Math.floor(y)) * W + Math.min(W - 1, Math.floor(x))
+        ];
+      if (!status[area]?.effects.has("light_rain")) continue;
+      const time =
+        Math.floor((clocks?.[area]?.light_rain ?? frame) / rain.framesPerStep) *
+        rain.framesPerStep;
+      const fall =
+        rain.fallFrames + Math.floor(visualNoise(gx, gy, seed + 113) * 12);
+      const period = fall + rain.splashFrames + rain.restFrames;
+      const age =
+        (time + Math.floor(visualNoise(gx, gy, seed + 127) * period)) % period;
+      if (age < fall) {
+        const t = age / fall;
+        const dx = x - rain.drift * (1 - t),
+          dy = y - rain.fallDistance * (1 - t);
+        for (let n = 0; n < rain.streakLength; n++)
+          put(dx - Math.floor(n / 2), dy - n, n === 0 ? head : tail);
+      } else if (age < fall + rain.splashFrames) {
+        const spread = age - fall < rain.splashFrames / 2 ? 1 : 2;
+        put(x - spread, y - 1, splash);
+        put(x + spread, y - 1, splash);
+        if (spread === 1) put(x, y, tail);
+      }
+    }
+  }
+}
+
 export function hazardPaint(
   L: WorldLayers,
   status: AreaStatus[],
@@ -414,12 +471,6 @@ export function hazardPaint(
       a = L.area[i];
     const fx = status[a]?.effects;
     if (!fx && !dam) continue;
-    if (fx?.has("light_rain")) {
-      const rainFrame = clocks?.[a]?.light_rain ?? frame;
-      const step = Math.floor(rainFrame / config.lightRain.framesPerStep);
-      if ((x * 13 + y * 7 + step) % config.lightRain.spacing === 0)
-        pixel(over, x, y, color(config.lightRain.color));
-    }
     const n = visualNoise(Math.floor(x / 5), Math.floor(y / 4), seed);
     const isDam = dam && y > damY && y < damY + phase * 1.1;
     if (low(k) && (fx?.has("flood") || isDam)) {
@@ -968,6 +1019,7 @@ export function hazardPaint(
       }
     }
   });
+  paintLightRain(over, L, status, frame, seed, clocks);
   return { under, over };
 }
 
