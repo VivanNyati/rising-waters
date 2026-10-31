@@ -58,16 +58,16 @@
   },
   "lightRain": {
     "framesPerStep": 3,
-    "cellSize": 19,
-    "density": 0.82,
+    "particleCount": 170,
+    "speed": 1.18,
     "fallFrames": 27,
     "restFrames": 18,
-    "splashFrames": 6,
+    "splashFrames": 9,
     "fallDistance": 19,
     "drift": 4,
     "streakLength": 3,
     "color": "#a7cbd5",
     "tailColor": "#718f9f",
-    "splashColor": "#8fb4c1"
+    "splashColor": "#bdd9dd"
   }
 }

@@ -412,37 +412,58 @@ function paintLightRain(
     if (status[L.area[py * W + px]]?.effects.has("light_rain"))
       pixel(out, px, py, c);
   };
-  for (let gy = 0; gy < Math.ceil(H / rain.cellSize); gy++) {
-    for (let gx = 0; gx < Math.ceil(W / rain.cellSize); gx++) {
-      if (visualNoise(gx, gy, seed + 101) > rain.density) continue;
-      const x =
-        gx * rain.cellSize + visualNoise(gx, gy, seed + 107) * rain.cellSize;
-      const y =
-        gy * rain.cellSize + visualNoise(gx, gy, seed + 109) * rain.cellSize;
-      const area =
-        L.area[
-          Math.min(H - 1, Math.floor(y)) * W + Math.min(W - 1, Math.floor(x))
-        ];
-      if (!status[area]?.effects.has("light_rain")) continue;
-      const time =
-        Math.floor((clocks?.[area]?.light_rain ?? frame) / rain.framesPerStep) *
-        rain.framesPerStep;
-      const fall =
-        rain.fallFrames + Math.floor(visualNoise(gx, gy, seed + 113) * 12);
-      const period = fall + rain.splashFrames + rain.restFrames;
-      const age =
-        (time + Math.floor(visualNoise(gx, gy, seed + 127) * period)) % period;
-      if (age < fall) {
-        const t = age / fall;
-        const dx = x - rain.drift * (1 - t),
-          dy = y - rain.fallDistance * (1 - t);
-        for (let n = 0; n < rain.streakLength; n++)
-          put(dx - Math.floor(n / 2), dy - n, n === 0 ? head : tail);
-      } else if (age < fall + rain.splashFrames) {
-        const spread = age - fall < rain.splashFrames / 2 ? 1 : 2;
-        put(x - spread, y - 1, splash);
-        put(x + spread, y - 1, splash);
-        if (spread === 1) put(x, y, tail);
+  // Independent emitters have no spatial grid. Each new drop chooses a fresh
+  // landing point and trajectory, so dense patches and gaps keep moving.
+  for (let id = 0; id < rain.particleCount; id++) {
+    const noise = (salt: number, cycle = 0) =>
+      visualNoise(id, cycle, seed + salt);
+    const anchorX = Math.floor(noise(101) * W),
+      anchorY = Math.floor(noise(103) * H);
+    const anchorArea = L.area[anchorY * W + anchorX];
+    const time =
+      Math.floor(
+        ((clocks?.[anchorArea]?.light_rain ?? frame) * rain.speed) /
+          rain.framesPerStep,
+      ) * rain.framesPerStep;
+    const period =
+      rain.fallFrames +
+      12 +
+      rain.splashFrames +
+      Math.floor(rain.restFrames * (0.5 + noise(107)));
+    const shifted = time + Math.floor(noise(109) * period);
+    const cycle = Math.floor(shifted / period),
+      age = shifted % period;
+    const x = noise(113, cycle) * (W - 1),
+      y = noise(127, cycle) * (H - 1);
+    const area = L.area[Math.floor(y) * W + Math.floor(x)];
+    if (!status[area]?.effects.has("light_rain")) continue;
+    const fall = rain.fallFrames + Math.floor(noise(131, cycle) * 12);
+    const distance = rain.fallDistance * (0.7 + noise(137, cycle) * 0.6);
+    const drift = rain.drift * (0.2 + noise(139, cycle) * 1.6);
+    const length = rain.streakLength - 1 + Math.floor(noise(149, cycle) * 3);
+    if (age < fall) {
+      const t = age / fall;
+      const dx = x - drift * (1 - t),
+        dy = y - distance * (1 - t);
+      for (let n = 0; n < length; n++)
+        put(
+          dx - Math.floor((n * drift) / distance),
+          dy - n,
+          n === 0 ? head : tail,
+        );
+    } else if (age < fall + rain.splashFrames) {
+      const progress = (age - fall) / rain.splashFrames;
+      const radius = progress < 0.34 ? 1 : progress < 0.67 ? 2 : 3;
+      const bounce = radius === 2 ? 2 : 1;
+      put(x - radius, y - bounce, splash);
+      put(x + radius, y - bounce, splash);
+      if (radius === 1) {
+        put(x, y, head);
+        put(x, y - 1, splash);
+      } else {
+        put(x - 1, y, tail);
+        put(x + 1, y, tail);
+        if (radius === 2) put(x, y, splash);
       }
     }
   }
