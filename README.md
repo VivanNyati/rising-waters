@@ -1,12 +1,12 @@
 # Rising Waters (Earthshare)
 
-A multiplayer interactive climate disaster engine-builder game focused on teaching the younger generation about broad disaster control, innovation, and practical low-level climate information.
+A multiplayer interactive climate disaster engine-builder game focused on teaching the younger generation about broad disaster control, innovation, and practical, low-level climate information.
 
-Originally built by the Earthshare team for MHacks 2026. Original project repository: [john-yang-11/mhacks26](https://github.com/john-yang-11/mhacks26).
+Originally built by the Earthshare team for MHacks 2026.
 
 A playable environmental strategy tycoon built entirely in TypeScript: Next.js/React in the browser, and a native SpacetimeDB 2.10.2 module as the backend. There is no Flask or Python game server.
 
-Four towns share one river valley. Every decade each town is hit by an event (a flood, drought, smog, a spill), and its advisor tells the player what is coming. The player answers a timed question about it, then chooses between a cheap fix that pushes the damage onto a neighbor or warms the planet, and a sustainable fix that costs more but protects the town for good. Then they build with sheep, wheat, wood, brick and ore, and watch the town grow on the map. After ten decades the biggest town wins, unless warming reaches +3°C first, in which case everyone loses.
+Four towns share one river valley. Every decade, each town is hit by an event (a flood, drought, smog, a spill), and its advisor tells the player what is coming. The player answers a timed question about it, then chooses between a cheap fix that pushes the damage onto a neighbor or warms the planet, and a sustainable fix that costs more but protects the town for good. Then they build with sheep, wheat, wood, brick, and ore, and watch the town grow on the map. After ten decades the biggest town wins, unless warming reaches +3°C first, in which case everyone loses.
 
 Every new game starts with one light rain shower affecting all four towns and a brief advisor-led camera focus before the first question. The first three decades introduce mild incidents without building destruction, leaving time to establish food production and defenses. Character dialogue is text-only; no voice service or audio API keys are required.
 
