@@ -12,8 +12,6 @@ Every new game starts with one light rain shower affecting all four towns and a 
 
 Modes: offline solo with AI neighbors, four-player hot-seat, and live SpacetimeDB rooms with AI filling unclaimed towns. The map is drawn live from `src/data/worldmap.json`; see `AGENTS.md` §0 for the full design.
 
-The simulation now includes routine pressures, rare major disasters, persistent regional recovery, bounded building destruction, food and maintenance upkeep, limited project actions and independent clean-energy research. See [the simulation rules](docs/SIMULATION.md) for balancing data, causal propagation and the UI handoff API.
-
 The whole sea and island now share one animated pixel canvas. Tsunamis arrive from a seeded west, east or south direction, flood low coastal ground, and teach evacuation to high ground through eight simple questions. Earthquakes can trigger tsunami cascades; warning systems and evacuation reduce later losses. Resource icons use the supplied `assets/resources_sheet.webp`. Human and AI bank trades dispatch short cargo-boat trips along connected water near each town's berth. Ocean colors, timing and port anchors live in `src/data/ocean.json`.
 
 ## Run locally (macOS and Windows)
@@ -60,10 +58,6 @@ npm run test:integration  # local SpacetimeDB must be running and published
 
 The integration check opens two independent identities and tests synchronized rooms, ownership, stale revisions, readiness, and host-only advancement. It creates a fresh test room each run. `npm --prefix apps/web run simulate` exercises 400 seeded worlds; it is a stability check, not proof of competitive balance.
 
-## Connect your SpacetimeDB account
-
-See [the complete setup guide](docs/SPACETIMEDB.md). The frontend needs only a WebSocket URL and a database name; do not put publisher credentials into browser environment variables. Cloud publishing requires your own CLI login and an available database name. No cloud resources have been deployed by this foundation.
-
 ## Source layout
 
 - `apps/web/src/game/`: shared deterministic rules, types, question access, and live SDK hook.
@@ -72,5 +66,3 @@ See [the complete setup guide](docs/SPACETIMEDB.md). The frontend needs only a W
 - `src/data/`: authored balance, buildings, technologies, hazards, geography, and quizzes.
 - `apps/web/src/components/`: world, economy, technology, diplomacy, learning, timeline, and results.
 - `assets/`: original world and reference art; runtime art is copied to `apps/web/public/assets/`.
-
-[Architecture and simulation assumptions](docs/ARCHITECTURE.md) · [Remaining production work](docs/ROADMAP.md)
