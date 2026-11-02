@@ -126,7 +126,7 @@
     "icon": "◍",
     "cost": {},
     "description": "Stores rain: future drought losses reduced.",
-    "protects": ["drought"],
+    "protects": ["drought", "short_dry_spell"],
     "green": true,
     "earned": true
   },

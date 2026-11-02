@@ -448,6 +448,8 @@ export function eventLoss(
   option: 0 | 1 | 2,
   quiz = true,
 ): Partial<Stock> {
+  // Old saves may still contain the shower's former wheat loss.
+  if (EVENTS[ev.type].gain) return {};
   const town = s.civs[c];
   const defended =
     town.buildings.some((b) => BUILDINGS[b]?.protects?.includes(ev.type)) ||

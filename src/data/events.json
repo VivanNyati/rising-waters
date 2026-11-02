@@ -775,15 +775,13 @@
     "openingOnly": true,
     "quizTypes": ["flood"],
     "regions": {},
-    "loss": {
-      "wheat": 1
-    },
-    "tell": "A passing shower has left small puddles around every town. A little wheat may spoil, but buildings and production are safe, and the rain clears by the next decade.",
-    "neighbor": "The same gentle shower reached all four towns. We can each keep water away from stored food and leave room for rain to soak into the ground.",
+    "loss": {},
+    "tell": "A gentle shower waters the fields across the whole island. Every town gains 1 wheat. Nothing is damaged, no goods are lost, and production stays safe.",
+    "neighbor": "The same welcome rain reached all four towns. Our fields each gain 1 wheat; nobody is harmed. Letting water soak into planted ground helps us prepare for heavier rain.",
     "cheap": {
-      "label": "Cover the food stores",
+      "label": "Welcome the rain",
       "cost": {},
-      "effect": "A free, temporary response to this small shower. At most 1 wheat is lost; no damage is passed to neighbors and warming stays unchanged."
+      "effect": "Gain 1 wheat for free. No damage, production loss, neighbor spillover or warming."
     },
     "green": {
       "label": "Plant a rain garden",
@@ -791,9 +789,41 @@
         "wood": 1
       },
       "build": "rain_garden",
-      "effect": "Spend 1 wood on a planted patch that absorbs runoff and provides lasting protection against future floods. At most 1 wheat is lost today."
+      "effect": "Gain 1 wheat and spend 1 wood on a rain garden for lasting flood protection. The shower causes no damage or production loss."
     },
-    "lesson": "Keep food dry and give rain somewhere to soak in. Preparing early leaves more resources for building later.",
-    "source": "https://www.epa.gov/soakuptherain/soak-rain-rain-gardens"
+    "lesson": "Gentle rain replenishes soil moisture. Planted ground lets water soak in before heavier storms arrive.",
+    "source": "https://www.epa.gov/soakuptherain/soak-rain-rain-gardens",
+    "gain": {
+      "wheat": 1
+    }
+  },
+  "short_dry_spell": {
+    "name": "Short dry spell",
+    "icon": "☀",
+    "color": "#e5c383",
+    "carrier": "local",
+    "openingOnly": true,
+    "quizTypes": ["drought"],
+    "regions": {},
+    "loss": {
+      "wheat": 1
+    },
+    "tell": "A brief spell without rain dries the topsoil across the whole island. Every town risks losing just 1 wheat. Buildings are safe, production continues normally, and the dry spell ends this decade.",
+    "neighbor": "All four towns are a little dry this decade. Keep a small water reserve and protect soil moisture; there is no need to drain a neighbor’s water.",
+    "cheap": {
+      "label": "Water the seedlings by hand",
+      "cost": {},
+      "effect": "At most 1 wheat lost. No building damage, production penalty, warming or damage passed to neighbors."
+    },
+    "green": {
+      "label": "Set up rainwater storage",
+      "cost": {
+        "wood": 1
+      },
+      "build": "cistern",
+      "effect": "Spend 1 wood for lasting drought protection. At most 1 wheat lost today; no building damage or production penalty."
+    },
+    "lesson": "A short dry spell can stress young crops. Storing rainwater and covering soil help save moisture before a longer drought.",
+    "source": "https://www.usgs.gov/special-topics/water-science-school/science/groundwater-depletion"
   }
 }

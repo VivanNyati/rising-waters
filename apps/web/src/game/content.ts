@@ -95,6 +95,8 @@ export interface EventDef {
   quizTypes: DisasterId[];
   regions: Partial<Record<CivId, number>>;
   loss: Partial<Stock>;
+  /** Beneficial events grant these goods once when responses resolve. */
+  gain?: Partial<Stock>;
   /** A building in a neighboring town that makes this event likelier. */
   cause?: string;
   climateDriven?: boolean;

@@ -64,11 +64,17 @@ export function introLines(civ: CivId): string[] {
 export function eventLines(state: GameState, civ: CivId): string[] {
   const ev = state.events[civ];
   const e = EVENTS[ev.type];
-  if (e.openingOnly)
+  if (e.gain)
     return [
       `One gentle rain shower is passing over the whole island. All four towns feel it lightly; let's look at ${CIVS[state.player].name}.`,
-      `${e.tell} Covering food stores is free, or we can spend just 1 wood to plant a rain garden for lasting flood protection.`,
-      "A correct answer can spare our 1 wheat. Then choose a response and build food production and defenses while these first three decades are gentle.",
+      `${e.tell} Welcoming the rain is free, or we can spend just 1 wood to plant a rain garden for lasting flood protection.`,
+      "The wheat bonus is guaranteed, even if we miss the question. Then choose a response and build food production and defenses while these first three decades are gentle.",
+    ];
+  if (e.openingOnly)
+    return [
+      `${e.name}! ${e.tell}`,
+      "All four civilizations face this same small setback. A correct answer saves the wheat; no buildings or production will be harmed.",
+      e.lesson,
     ];
   if (ev.quiet)
     return [

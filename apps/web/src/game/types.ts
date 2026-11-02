@@ -31,7 +31,8 @@ export type DisasterId =
 export type AddedDisasterId = "tornado" | "small_quake" | "mega_tsunami";
 
 /** Every hazard in the event matrix is a playable cycle event. */
-export type EventId = DisasterId | AddedDisasterId | "light_rain";
+export type EventId =
+  DisasterId | AddedDisasterId | "light_rain" | "short_dry_spell";
 
 /**
  * Each cycle: the event is told → everyone answers a quiz → an affected neighbor responds

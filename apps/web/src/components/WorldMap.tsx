@@ -8,7 +8,7 @@ import {
 } from "react";
 import type { HazardFrames } from "@/game/hazardVisuals";
 import { CIVS, EVENTS } from "@/game/content";
-import { spillTarget } from "@/game/engine";
+import { disasterTransfers } from "@/game/disasterTransfers";
 import { OWNERS, TOWNS, townOf, ARROW_COLORS } from "@/game/towns";
 import { CIV_IDS, type CivId, type GameState } from "@/game/types";
 import {
@@ -393,6 +393,15 @@ export default function WorldMap({
   openingFocus?: boolean;
 }) {
   const [zoomStep, setZoomStep] = useState(0);
+  const [transferId, setTransferId] = useState<string>();
+  const transferDialog = useRef<HTMLDialogElement>(null);
+  const spills = disasterTransfers(state);
+  const transfer = spills.find((item) => item.id === transferId);
+  useEffect(() => {
+    const dialog = transferDialog.current;
+    if (transfer && dialog && !dialog.open) dialog.showModal();
+    if (!transfer && dialog?.open) dialog.close();
+  }, [transfer]);
   const [fit, setFit] = useState({ device: 3, dpr: 1, width: 0, height: 0 });
   const svg = useRef<SVGSVGElement>(null);
   const viewport = useRef<HTMLDivElement>(null);
@@ -451,20 +460,6 @@ export default function WorldMap({
     el.scrollTop = Math.max(0, (el.scrollHeight - el.clientHeight) / 2);
   }, [scale, spotlight, state.player, horizontalCenter]);
 
-  // Cheap choices push damage onto a neighbor: draw that as an arrow between towns.
-  const spills =
-    state.phase === "build"
-      ? CIV_IDS.flatMap((from) => {
-          const e = EVENTS[state.events[from].type];
-          if (
-            state.events[from].quiet ||
-            state.civs[from].choice !== 0 ||
-            !e.cheap.spillTo
-          )
-            return [];
-          return [{ from, to: spillTarget(from, e.cheap.spillTo), e }];
-        })
-      : [];
   return (
     <div className="map-shell pixel-map">
       <div
@@ -475,6 +470,7 @@ export default function WorldMap({
         aria-label="Map camera. Drag to pan, or use arrow keys."
         onPointerDown={(e) => {
           if (e.button !== 0) return;
+          if ((e.target as Element).closest(".spill-pixel")) return;
           e.preventDefault();
           const el = e.currentTarget;
           el.setPointerCapture(e.pointerId);
@@ -661,7 +657,7 @@ export default function WorldMap({
                 </g>
               );
             })}
-            {spills.map(({ from, to, e }) => {
+            {spills.map(({ id, from, to, e, source, destination }) => {
               const [x, y] = keep(from),
                 [tx, ty] = keep(to);
               // Arrows sharing a destination take separate lanes so they don't overlap.
@@ -675,10 +671,28 @@ export default function WorldMap({
                   key={from}
                   className="spill-pixel"
                   shapeRendering="crispEdges"
+                  role="button"
+                  tabIndex={0}
+                  aria-label={`${e.name}: ${source} to ${destination}. Show why this disaster transferred.`}
+                  aria-haspopup="dialog"
+                  onClick={() => setTransferId(id)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter" || event.key === " ") {
+                      event.preventDefault();
+                      setTransferId(id);
+                    }
+                  }}
                 >
                   <title>
-                    {`${CIVS[from].name} chose "${e.cheap.label}": ${CIVS[to].name} takes the damage.`}
+                    {`${e.name}: ${source} → ${destination}. Click for the cause and impact.`}
                   </title>
+                  <path
+                    d={px.outline}
+                    fill="none"
+                    stroke="transparent"
+                    strokeWidth="32"
+                    pointerEvents="stroke"
+                  />
                   <path d={px.outline} fill="#000" />
                   <path d={px.dark} fill={dark} />
                   <path d={px.light} fill={light} />
@@ -696,6 +710,33 @@ export default function WorldMap({
           </svg>
         </div>
       </div>
+      <dialog
+        ref={transferDialog}
+        className="transfer-dialog"
+        aria-labelledby="transfer-title"
+        onClose={() => setTransferId(undefined)}
+      >
+        {transfer && (
+          <>
+            <h2 id="transfer-title">
+              {transfer.e.icon} {transfer.e.name}
+            </h2>
+            <p>
+              <strong>From:</strong> {transfer.source}
+            </p>
+            <p>
+              <strong>To:</strong> {transfer.destination}
+            </p>
+            <p>
+              <strong>Why:</strong> {transfer.why}
+            </p>
+            <p>{transfer.impact}</p>
+            <button autoFocus onClick={() => transferDialog.current?.close()}>
+              Close
+            </button>
+          </>
+        )}
+      </dialog>
       <div className="map-controls">
         <button
           aria-label="Zoom out"

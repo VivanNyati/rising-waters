@@ -534,7 +534,10 @@ export function hazardPaint(
             : P.water,
         );
     }
-    if (fx?.has("drought") && [6, 7, 11].includes(k)) {
+    if (
+      (fx?.has("drought") || fx?.has("short_dry_spell")) &&
+      [6, 7, 11].includes(k)
+    ) {
       const [cx, cy] = TOWNS[a].keepTile;
       let intensity = 0.2;
       for (const [dx, dy, rx, ry] of [

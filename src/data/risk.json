@@ -260,6 +260,14 @@
         "wood": 1,
         "ore": 1
       }
+    },
+    "short_dry_spell": {
+      "major": false,
+      "duration": 1,
+      "vulnerable": [],
+      "production": [],
+      "growth": 0,
+      "cleanup": {}
     }
   },
   "climateSeverityThreshold": 1.5,
@@ -323,16 +331,22 @@
       "perRound": 2,
       "scarRounds": 7,
       "productionMultiplier": 1.4
+    },
+    "short_dry_spell": {
+      "cap": 0,
+      "perRound": 0,
+      "scarRounds": 0,
+      "productionMultiplier": 1
     }
   },
   "fireStormExtraCap": 2,
   "megaTsunamiClimateThreshold": 2,
   "opening": {
     "severity": 0.5,
-    "activeTowns": [4, 2, 3],
+    "activeTowns": [4, 4, 3],
     "majorFreeRounds": 3,
     "lossCap": 1,
     "preventDestructionRounds": 3,
-    "incidents": ["light_rain", "drought", "landslide"]
+    "incidents": ["light_rain", "short_dry_spell", "landslide"]
   }
 }

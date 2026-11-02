@@ -433,6 +433,25 @@ export function resolveEvents(s: GameState) {
     }
     const choice = civ.choice ?? 2;
     const h = ensureHazard(s, c, ev);
+    if (e.openingOnly) {
+      const taken = lose(civ.stock, eventLoss(s, c, ev, choice));
+      for (const r of RESOURCES) civ.stock[r] += e.gain?.[r] ?? 0;
+      if (
+        choice === 1 &&
+        e.green.build &&
+        !civ.buildings.includes(e.green.build)
+      )
+        civ.buildings.push(e.green.build);
+      const result = e.gain
+        ? `gained ${describe(e.gain)}`
+        : Object.keys(taken).length
+          ? `lost ${describe(taken)}`
+          : "stored goods were spared";
+      const line = `${e.name}: ${result}. No building damage or production loss; clears this decade.${choice === 1 ? ` ${e.green.label}: lasting protection established.` : ""}`;
+      civ.report = [line];
+      s.news.push({ round: s.round, civ: c, text: `${CIVS[c].name}: ${line}` });
+      continue;
+    }
     let allowance = destructionProfile(ev.type).perRound;
     const report: string[] = [];
     const origin = ev.cause ?? ev.origin;

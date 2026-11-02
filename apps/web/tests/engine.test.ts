@@ -289,7 +289,7 @@ test("hot-seat waits for every person before moving on", () => {
 });
 
 test("every playable event has a quiz, neighbor line and lasting mitigation", () => {
-  assert.equal(Object.keys(EVENTS).length, 20);
+  assert.equal(Object.keys(EVENTS).length, 21);
   for (const [id, event] of Object.entries(EVENTS)) {
     if (id === "mega_tsunami") continue; // Terminal catastrophe has no recovery choice.
     assert(event.neighbor.length > 20, `${id} needs a neighbor response`);

@@ -745,9 +745,12 @@ function ChoiceBox({
         <Costs cost={cost} />
         <span>{c.effect.replace("{target}", target)}</span>
         <span>
-          Potential goods loss: {describe(eventLoss(state, civ, ev, option))}.
-          Recovery affects production for up to {profile(ev.type).duration}{" "}
-          rounds.
+          {e.gain
+            ? `Guaranteed bonus: ${describe(e.gain)}. No damage.`
+            : `Potential goods loss: ${describe(eventLoss(state, civ, ev, option))}.`}{" "}
+          {profile(ev.type).production.length
+            ? `Recovery affects production for up to ${profile(ev.type).duration} rounds.`
+            : "No production penalty."}
         </span>
         {profile(ev.type).vulnerable.length > 0 && (
           <span>
@@ -773,7 +776,9 @@ function ChoiceBox({
           {card(0, "cheap")}
           {card(1, "green")}
           <button className="choice-brace" onClick={() => onChoose(2)}>
-            Brace and take the full hit
+            {e.gain
+              ? "Let the fields soak up the rain"
+              : "Brace and take the full hit"}
           </button>
         </div>
       }
